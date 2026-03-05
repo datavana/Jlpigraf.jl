@@ -3,7 +3,7 @@
 #
 
 """
-    api_setup(apiserver, apitoken = nothing, verbose = false)
+    api_setup(apiserver, apitoken = nothing; verbose = false)
 
 Save API connection settings to environment variables.
 
@@ -12,7 +12,7 @@ Arguments:
 - apitoken: Access token. If NULL, you will be asked to enter the token.
 - verbose: Show debug messages and the built URLs
 """
-function api_setup(apiserver, apitoken = nothing, verbose = false)
+function api_setup(apiserver, apitoken = nothing; verbose = false)
     if isnothing(apitoken)
         print("Please, enter your access token: ")
         apitoken = readline()
@@ -24,6 +24,8 @@ function api_setup(apiserver, apitoken = nothing, verbose = false)
 end
 
 """
+    api_silent(silent = false)
+
 Set silent mode
 
 In silent mode, all user prompts are automatically confirmed.
@@ -38,6 +40,8 @@ function api_silent(silent = false)
 end
 
 """
+    api_buildurl(endpoint, query = nothing, database = nothing, extension = "json")
+
 Build base URL
 
 Arguments:
@@ -47,14 +51,24 @@ Arguments:
 - extension: Extension added to the URL path, defaults to json.
 """
 function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json")
+
     server = get(ENV, "epi_apiserver", "")
     token = get(ENV, "epi_apitoken", "")
     verbose = get(ENV, "epi_verbose", "false") == "true"
     silent = get(ENV, "epi_silent", "false") == "true"
 
-    url = URI(server)
-    url.query = Dict("token" => token)
+    built_url = join([server, "epi", database, endpoint], "/") * "?" * token
 
+    if verbose && !silent
+        println(built_url)
+    end
+
+    return built_url
+    
+
+    url = HTTP.URI(server, query="token=" * token)
+
+    # TODO use URI.jl?
     if !isnothing(query)
         for (k, v) in query
             url.query[k] = v
@@ -65,7 +79,7 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
         endpoint = "/" * endpoint
     end
 
-    parsed_endpoint = URI(endpoint)
+    parsed_endpoint = HTTP.URI(endpoint)
     for (k, v) in parsed_endpoint.query
         url.query[k] = v
     end
@@ -95,6 +109,8 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
 end
 
 """
+    api_job_create(endpoint, params, database, payload = nothing)
+
 Create and execute a job
 
 Arguments:
@@ -154,6 +170,8 @@ function api_job_create(endpoint, params, database, payload = nothing)
 end
 
 """
+    api_job_execute(job_id)
+
 Execute a job
 
 Arguments:
@@ -235,6 +253,8 @@ function api_job_execute(job_id)
 end
 
 """
+    api_table(endpoint, params = Dict(), db = nothing, maxpages = 1, silent = false)
+
 Download tables
 
 Fetches tables such as articles, projects or properties
@@ -320,6 +340,8 @@ function api_table(endpoint, params = Dict(), db = nothing, maxpages = 1, silent
 end
 
 """
+    api_post(endpoint, params = Dict(), payload = nothing, database = nothing)
+
 Post data to epigraf
 
 Arguments:
@@ -334,6 +356,8 @@ function api_post(endpoint, params = Dict(), payload = nothing, database = nothi
 end
 
 """
+    api_upload(endpoint, params = Dict(), filepath = nothing, mimetype = nothing, overwrite = false, database = nothing)
+
 Upload file to epigraf
 
 Arguments:
@@ -351,6 +375,8 @@ function api_upload(endpoint, params = Dict(), filepath = nothing, mimetype = no
 end
 
 """
+    api_download(endpoint, params = Dict(), filename = nothing, filepath = nothing, overwrite = false, database = nothing)
+
 Download a file from Epigraf
 
 Arguments:
@@ -399,6 +425,8 @@ function api_download(endpoint, params = Dict(), filename = nothing, filepath = 
 end
 
 """
+    api_delete(endpoint, params = Dict(), payload = nothing, database = nothing)
+
 Delete epigraf data
 
 Arguments:
@@ -413,6 +441,8 @@ function api_delete(endpoint, params = Dict(), payload = nothing, database = not
 end
 
 """
+    api_patch(data, db, table = nothing, type = nothing, wide = true)
+
 Patch data
 
 Update records in the database using the API.
@@ -463,6 +493,8 @@ function api_patch(data, db, table = nothing, type = nothing, wide = true)
 end
 
 """
+    api_request(endpoint, params = Dict(), payload = nothing, database = nothing, method = HTTP.post, encode = "json")
+
 Send request to epigraf
 
 Arguments:
@@ -516,6 +548,8 @@ function api_request(endpoint, params = Dict(), payload = nothing, database = no
 end
 
 """
+    to_epitable(data, source = nothing)
+
 Add the epi_tbl class and make it remember its source
 
 Arguments:

@@ -3,6 +3,8 @@
 #
 
 """
+    api_fetch(table, params = Dict(); db = nothing, maxpages = 1)
+
 Fetch entity data such as articles, projects or properties from the API
 
 Returns all data belonging to all entities matched by the params.
@@ -15,7 +17,7 @@ Arguments:
 - db: The database name
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 """
-function api_fetch(table, params = Dict(), db = nothing, maxpages = 1)
+function api_fetch(table, params = Dict(); db = nothing, maxpages = 1)
     params["columns"] = "0"
     params["idents"] = "id"
     df = api_table(table, params, db, maxpages)
@@ -27,6 +29,8 @@ function api_fetch(table, params = Dict(), db = nothing, maxpages = 1)
 end
 
 """
+    db_fetch(table, params = Dict(), db = nothing)
+
 Fetch entity data such as articles, projects or properties using direct database access
 
 Returns all data belonging to all entities matched by the params.
@@ -83,6 +87,8 @@ function db_fetch(table, params = Dict(), db = nothing)
 end
 
 """
+    fetch_table(table, columns = [], params = Dict(), db = nothing, maxpages = 1)
+
 Fetch tables such as articles, projects or properties
 
 Returns a row with defined columns for each record matched by the params.
@@ -104,6 +110,8 @@ function fetch_table(table, columns = [], params = Dict(), db = nothing, maxpage
 end
 
 """
+    fetch_entity(ids, params = Dict(), db = nothing, silent = false)
+
 Fetch entities such as single articles, projects or properties
 
 Returns all data belonging to the entity identified by ID.
