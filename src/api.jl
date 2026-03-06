@@ -57,40 +57,18 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
     verbose = get(ENV, "epi_verbose", "false") == "true"
     silent = get(ENV, "epi_silent", "false") == "true"
 
-    # begin hotfix 2026-03-06
-    built_url = join([server, "epi", database, endpoint], "/") *
-        "." * extension *
-        "?" * token
-    
-    if verbose && !silent
-        println(built_url)
-    end
-
-    return built_url
-    # end hotfix
-
-
-    # TODO 2026-03-06 URI is an immutable struct!
-    url = URI(server)
-    url.query = Dict("token" => token)
-
-
-    if !isnothing(query)
-        for (k, v) in query
-            url.query[k] = v
-        end
-    end
+    uri_query = Dict("token" => token)
 
     if !startswith(endpoint, "/")
         endpoint = "/" * endpoint
     end
 
-    parsed_endpoint = HTTP.URI(endpoint)
-    for (k, v) in parsed_endpoint.query
-        url.query[k] = v
-    end
-    endpoint = parsed_endpoint.path
+    # merge query params in endpoint
+    parsed_endpoint = URI(endpoint)
+    merge!(uri_query, URIs.queryparams(parsed_endpoint))
 
+    # add extension
+    endpoint = parsed_endpoint.path
     endpoint_extension = splitext(endpoint)[2]
     if endpoint_extension != ""
         extension = ""
@@ -101,12 +79,18 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
     end
 
     if !isnothing(database)
-        url.path = "epi/" * database * endpoint * extension
+        uri_path = "/epi/" * database * endpoint * extension
     else
-        url.path = endpoint * extension
+        uri_path = endpoint * extension
     end
 
-    built_url = string(url)
+    uri = URI(
+        scheme = URI(server).scheme,
+        host = URI(server).host,
+        path = uri_path,
+        query = uri_query
+    )
+    built_url = string(uri)
     if verbose && !silent
         println(built_url)
     end
