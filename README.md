@@ -14,7 +14,6 @@ The package is still in the early stages. However, the basic functions are alrea
 | 0.4.0 | Import/Update data in Epigraf |
 | 0.5.0 | Batch processing |
 
-
 ## Installation
 Get the package from GitHub:
 ``` julia
