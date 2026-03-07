@@ -28,12 +28,13 @@ See Epigraf's [documentation](https://epigraf.inschriften.net/help/coreconcepts/
 ## Usage
 
 ### First steps
-First, inform Jlpigraf of the Epigraf instance you wish to use and how you are authorized to do so.
-An administrator has usually registered you and granted you the appropriate rights. You can find the token in your user profile. The example below uses a token for a test user.
+First, inform Jlpigraf of the Epigraf instance you wish to use and authenticate with an API access token.
+An administrator has usually registered you and granted you the appropriate premissions.
+You will find the access token in your user profile. The example below uses a token for a test user.
 
 ``` julia
 # Set token to get access to the API
-api_setup("https://epigraf.uni-muenster.de","BC0YB9XVBGDFVOGNRWCP")
+api_setup("https://epigraf.uni-muenster.de", "testapitoken")
 
 # Get an articles table
 articles = fetch_table("articles"; db = "epi_movies", maxpages = 2)
