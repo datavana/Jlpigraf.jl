@@ -10,4 +10,6 @@ export api_setup, api_fetch, fetch_table
 include("api.jl")
 include("fetch.jl")
 
+const version=v"0.1.0-DEV"
+
 end

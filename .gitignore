@@ -1,5 +1,8 @@
 /Manifest*.toml
 *.*~
 .idea/
+#*
+.#*
+run/*
 examples/scratch.jl
 

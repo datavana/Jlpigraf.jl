@@ -1,7 +1,7 @@
 name = "Jlpigraf"
 uuid = "09f48eac-2dd1-4590-853b-6772f250bf7c"
-version = "1.0.0-DEV"
-authors = ["Georg Hertkorn <zweiglimmergneis@t-online.de> and contributors"]
+version = "0.1.0-DEV"
+authors = ["Georg Hertkorn <georg.hertkorn@adwmainz.de>, Jakob Jünger <jakob.juenger@uni-muenster.de> and contributors"]
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
