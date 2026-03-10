@@ -28,7 +28,14 @@ See Epigraf's [documentation](https://epigraf.inschriften.net/help/coreconcepts/
 ## Usage
 
 ### First steps
-First, inform Jlpigraf of the Epigraf instance you wish to use and authenticate with an API access token.
+If you are not a registered user of an Epigraf instance, you can access the test version using the following credentials:  
+URL: https://epigraf.uni-muenster.de  
+Username: epitest  
+Password: epitest.  
+Logging in will give you an overview of the stored test data, e.g., displaying an article list: https://epigraf.uni-muenster.de/epi/epi_movies/articles.
+
+To use the API, 
+first, inform Jlpigraf of the Epigraf instance you wish to use and authenticate with an API access token.
 An administrator has usually registered you and granted you the appropriate permissions.
 You will find the access token in your user profile. The example below uses a token for a test user.
 
@@ -37,32 +44,26 @@ You will find the access token in your user profile. The example below uses a to
 api_setup("https://epigraf.uni-muenster.de", "testapitoken")
 
 # Get an articles table
-articles = fetch_table("articles"; db = "epi_movies", maxpages = 2)
+articles = fetch_table("articles"; columns=[:id, :signature, :name], db = "epi_movies", maxpages = 2)
 ```
 `articles` holds a DataFrame with article data, corresponding to the top level of the Relational Article Model.
 
 ```
-Fetched 20 records from articles.
-20×3 DataFrame
- Row │ signature  name                      project_name 
-     │ Int64      String31                  String7      
-─────┼───────────────────────────────────────────────────
-   1 │         1  2001: A Space Odyssey     Movies
-   2 │         2  Spartacus                 Movies
-   3 │         3  Gladiator                 Movies
-   4 │         4  The Godfather             Movies
-   5 │         5  Star Wars                 Movies
-   6 │         6  Superbad                  Movies
-   7 │         7  Pirates of the Caribbean  Movies
-  ⋮  │     ⋮                 ⋮                   ⋮
-  14 │         4  The Godfather             Movies
-  15 │         5  Star Wars                 Movies
-  16 │         6  Superbad                  Movies
-  17 │         7  Pirates of the Caribbean  Movies
-  18 │         8  The Lord of the Rings     Movies
-  19 │         9  The Chronicles of Narnia  Movies
-  20 │        10  La La Land                Movies
-                                           6 rows omitted
+Fetched 10 records from articles.
+10×3 DataFrame
+ Row │ id           signature  name                     
+     │ String15     Int64      String31
+─────┼──────────────────────────────────────────────────
+   1 │ articles-1           1  2001: A Space Odyssey
+   2 │ articles-2           2  Spartacus
+   3 │ articles-5           3  Gladiator
+   4 │ articles-6           4  The Godfather
+   5 │ articles-7           5  Star Wars
+   6 │ articles-8           6  Superbad
+   7 │ articles-9           7  Pirates of the Caribbean
+   8 │ articles-10          8  The Lord of the Rings
+   9 │ articles-11          9  The Chronicles of Narnia
+  10 │ articles-12         10  La La Land
 ```
 
 

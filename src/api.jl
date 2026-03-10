@@ -64,8 +64,8 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
     end
 
     # merge query params in endpoint
-    parsed_endpoint = URI(endpoint)
-    merge!(uri_query, URIs.queryparams(parsed_endpoint))
+    parsed_endpoint = URI(endpoint)    
+    merge!(uri_query, query, URIs.queryparams(parsed_endpoint))
 
     # add extension
     endpoint = parsed_endpoint.path
@@ -265,7 +265,7 @@ function api_table(endpoint, params = Dict(), db = nothing, maxpages = 1, silent
 
     fetchmore = true
     while fetchmore
-        params["page"] = page
+        params["page"] = string(page)
         url = api_buildurl(endpoint, params, db, "csv")
 
         if !silent
@@ -278,11 +278,7 @@ function api_table(endpoint, params = Dict(), db = nothing, maxpages = 1, silent
         message = nothing
 
         try
-            if verbose
-                resp = HTTP.get(url)
-            else
-                resp = HTTP.get(url)
-            end
+            resp = HTTP.get(url)            
 
             if resp.status == 200
                 body = String(resp.body)
