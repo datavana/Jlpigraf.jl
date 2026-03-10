@@ -34,8 +34,7 @@ Username: epitest
 Password: epitest.  
 Logging in will give you an overview of the stored test data, e.g., displaying an article list: https://epigraf.uni-muenster.de/epi/epi_movies/articles.
 
-To use the API, 
-first, inform Jlpigraf of the Epigraf instance you wish to use and authenticate with an API access token.
+In order to use the API, you first need to inform Jlpigraf of the Epigraf instance you wish to use and authenticate with an API access token.
 An administrator has usually registered you and granted you the appropriate permissions.
 You will find the access token in your user profile. The example below uses a token for a test user.
 
