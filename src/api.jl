@@ -5,22 +5,42 @@
 """
     api_setup(apiserver, apitoken = nothing; verbose = false)
 
-Save API connection settings to environment variables.
+Save API connection settings to environment variables or read ".env"-File
 
 Arguments:
 - apiserver: URL of the Epigraf server (including https-protocol)
 - apitoken: Access token. If NULL, you will be asked to enter the token.
 - verbose: Show debug messages and the built URLs
 """
-function api_setup(apiserver, apitoken = nothing; verbose = false)
-    if isnothing(apitoken)
-        print("Please, enter your access token: ")
-        apitoken = readline()
+function api_setup(apiserver = nothing, apitoken = nothing; verbose = false)
+    settingsfile = joinpath(@__DIR__, "..", SETTINGS_FILE)
+    if isfile(settingsfile)
+        DotEnv.load!(ENV, settingsfile)
     end
-    settings = Dict("apiserver" => apiserver, "apitoken" => apitoken, "verbose" => verbose)
-    for (key, value) in settings
-        ENV["epi_" * string(key)] = string(value)
+
+    function store_in_env(key, arg, msg)
+        if isnothing(arg)
+            if (!haskey(ENV, key))
+                print("Please, " * msg * ": ")        
+                ENV[key] = readline()
+            end 
+        else
+            ENV[key] = arg
+        end 
+        return ENV[key]
     end
+
+    store_in_env("EPI_APISERVER", apiserver, "enter your server URL")
+    store_in_env("EPI_APITOKEN", apitoken, "enter your access token")    
+    ENV["EPI_VERBOSE"] = verbose;
+
+    open(settingsfile, "w") do io
+        for key in ("EPI_APISERVER", "EPI_APITOKEN")
+            println(io, string(key) * "=" * string(ENV[key]))
+        end
+    end
+    return nothing
+    
 end
 
 """
@@ -32,11 +52,11 @@ In silent mode, all user prompts are automatically confirmed.
 Be careful, this will skip the prompt to confirm operations
 on the live server.
 
-Arguments:
+# Arguments:
 - silent: Boolean
 """
 function api_silent(silent = false)
-    ENV["epi_silent"] = string(silent)
+    ENV["EPI_SILENT"] = silent
 end
 
 """
@@ -52,10 +72,10 @@ Arguments:
 """
 function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json")
 
-    server = get(ENV, "epi_apiserver", "")
-    token = get(ENV, "epi_apitoken", "")
-    verbose = get(ENV, "epi_verbose", "false") == "true"
-    silent = get(ENV, "epi_silent", "false") == "true"
+    server = get(ENV, "EPI_APISERVER", "")
+    token = get(ENV, "EPI_APITOKEN", "")
+    verbose = get(ENV, "EPI_VERBOSE", false)
+    silent = get(ENV, "EPI_SILENT", false)
 
     uri_query = Dict("token" => token)
 
@@ -110,11 +130,11 @@ Arguments:
 - payload: The data posted to the job endpoint
 """
 function api_job_create(endpoint, params, database, payload = nothing)
-    verbose = get(ENV, "epi_verbose", "false") == "true"
-    server = get(ENV, "epi_apiserver", "")
+    
+    server = get(ENV, "EPI_APISERVER", "")
+    silent = get(ENV, "EPI_SILENT", false)
 
-    silent = get(ENV, "epi_silent", "false")
-    if silent != "true"
+    if !silent
         println("Creating job on server " * server)
     end
 
@@ -125,12 +145,8 @@ function api_job_create(endpoint, params, database, payload = nothing)
     url = api_buildurl(endpoint, params, database)
 
     headers = Dict("Content-Type" => "application/json")
-    if verbose
-        resp = HTTP.post(url, headers, JSON.json(payload))
-    else
-        resp = HTTP.post(url, headers, JSON.json(payload))
-    end
-
+    resp = HTTP.post(url, headers, JSON.json(payload))
+    
     body = JSON.parse(String(resp.body))
     job_id = get(body, "job_id", nothing)
 
@@ -167,8 +183,7 @@ Execute a job
 Arguments:
 - job_id: The job ID
 """
-function api_job_execute(job_id)
-    verbose = get(ENV, "epi_verbose", "false") == "true"
+function api_job_execute(job_id)    
     println("Starting job " * string(job_id) * ".")
 
     url = api_buildurl("jobs/execute/" * string(job_id))
@@ -176,11 +191,8 @@ function api_job_execute(job_id)
     result = []
     polling = true
     while polling
-        if verbose
-            resp = HTTP.post(url)
-        else
-            resp = HTTP.post(url)
-        end
+        
+        resp = HTTP.post(url)    
 
         body = JSON.parse(String(resp.body))
         newresult = nothing
@@ -256,8 +268,7 @@ Arguments:
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 - silent: Whether to output status messages
 """
-function api_table(endpoint, params = Dict(), db = nothing, maxpages = 1, silent = false)
-    verbose = get(ENV, "epi_verbose", "false") == "true"
+function api_table(endpoint; params = Dict(), db = nothing, maxpages = 1, silent = false)    
 
     data = DataFrame()
     rows = DataFrame()
@@ -374,12 +385,11 @@ Arguments:
 - overwrite: Whether to overwrite existing files.
 - database: The selected database.
 """
-function api_download(endpoint, params = Dict(), filename = nothing, filepath = nothing, overwrite = false, database = nothing)
-    verbose = get(ENV, "epi_verbose", "false") == "true"
-    server = get(ENV, "epi_apiserver", "")
+function api_download(endpoint, params = Dict(), filename = nothing, filepath = nothing, overwrite = false, database = nothing)    
+    server = get(ENV, "EPI_APISERVER", "")
 
-    silent = get(ENV, "epi_silent", "false")
-    if silent != "true"
+    silent = get(ENV, "EPI_SILENT", false)
+    if !silent
         println("Downloading file from " * server)
     end
 
@@ -387,12 +397,8 @@ function api_download(endpoint, params = Dict(), filename = nothing, filepath = 
 
     url = api_buildurl(endpoint, params, database, nothing)
 
-    if verbose
-        resp = HTTP.get(url)
-    else
-        resp = HTTP.get(url)
-    end
-
+    resp = HTTP.get(url)
+    
     error = false
     message = nothing
 
@@ -493,11 +499,11 @@ Arguments:
 - encode: Payload encoding. Passed to the HTTP method function.
 """
 function api_request(endpoint, params = Dict(), payload = nothing, database = nothing, method = HTTP.post, encode = "json")
-    verbose = get(ENV, "epi_verbose", "false") == "true"
-    server = get(ENV, "epi_apiserver", "")
+    
+    server = get(ENV, "EPI_APISERVER", "")
 
-    silent = get(ENV, "epi_silent", "false")
-    if silent != "true"
+    silent = get(ENV, "EPI_SILENT", false)
+    if !silent
         println("Posting data to " * server)
     end
 
@@ -508,11 +514,9 @@ function api_request(endpoint, params = Dict(), payload = nothing, database = no
     url = api_buildurl(endpoint, params, database)
 
     headers = Dict("Content-Type" => "application/json")
-    if verbose
-        resp = method(url, headers, JSON.json(payload))
-    else
-        resp = method(url, headers, JSON.json(payload))
-    end
+    
+    resp = method(url, headers, JSON.json(payload))
+    
 
     body = JSON.parse(String(resp.body))
 
