@@ -13,9 +13,9 @@ Arguments:
 - verbose: Show debug messages and the built URLs
 """
 function api_setup(apiserver = nothing, apitoken = nothing; verbose = false)
-    settingsfile = joinpath(@__DIR__, "..", SETTINGS_FILE)
-    if isfile(settingsfile)
-        DotEnv.load!(ENV, settingsfile)
+    
+    if isfile(SETTINGS_FILE)
+        DotEnv.load!(ENV, SETTINGS_FILE)
     end
 
     function store_in_env(key, arg, msg)
@@ -34,10 +34,14 @@ function api_setup(apiserver = nothing, apitoken = nothing; verbose = false)
     store_in_env("EPI_APITOKEN", apitoken, "enter your access token")    
     ENV["EPI_VERBOSE"] = verbose;
 
-    open(settingsfile, "w") do io
+    open(SETTINGS_FILE, "w") do io
         for key in ("EPI_APISERVER", "EPI_APITOKEN")
             println(io, string(key) * "=" * string(ENV[key]))
         end
+    end
+
+    if (verbose) 
+        @info "Using server" ENV["EPI_APISERVER"]        
     end
     return nothing
     
@@ -74,8 +78,9 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
 
     server = get(ENV, "EPI_APISERVER", "")
     token = get(ENV, "EPI_APITOKEN", "")
-    verbose = get(ENV, "EPI_VERBOSE", false)
-    silent = get(ENV, "EPI_SILENT", false)
+    verbose = get(ENV, "EPI_VERBOSE", false) === "true"
+    silent = get(ENV, "EPI_SILENT", false) === "true"
+    
 
     uri_query = Dict("token" => token)
 
@@ -132,7 +137,7 @@ Arguments:
 function api_job_create(endpoint, params, database, payload = nothing)
     
     server = get(ENV, "EPI_APISERVER", "")
-    silent = get(ENV, "EPI_SILENT", false)
+    silent = get(ENV, "EPI_SILENT", false) === "true"
 
     if !silent
         println("Creating job on server " * server)
@@ -268,7 +273,7 @@ Arguments:
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 - silent: Whether to output status messages
 """
-function api_table(endpoint; params = Dict(), db = nothing, maxpages = 1, silent = false)    
+function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent = false)    
 
     data = DataFrame()
     rows = DataFrame()
@@ -287,23 +292,22 @@ function api_table(endpoint; params = Dict(), db = nothing, maxpages = 1, silent
             end
         end
         message = nothing
-
+        rows = DataFrame()
         try
             resp = HTTP.get(url)            
 
             if resp.status == 200
                 body = String(resp.body)
-                rows = CSV.read(IOBuffer(body), delim = ';', DataFrame)
-            elseif resp.status == 404
-                message = "No more data found."
-                rows = DataFrame()
-            else
-                rows = DataFrame()
+                rows = CSV.read(IOBuffer(body), delim = ';', DataFrame)            
+            else                
                 message = "Error " * string(resp.status) * ": " * String(resp.body)
             end
         catch e
-            message = string(e)
-            rows = DataFrame()
+            if e.status == 404
+                message = "No more data found."                
+            else
+                message = string(e)
+            end            
         end
 
         if !isnothing(message)
@@ -388,7 +392,7 @@ Arguments:
 function api_download(endpoint, params = Dict(), filename = nothing, filepath = nothing, overwrite = false, database = nothing)    
     server = get(ENV, "EPI_APISERVER", "")
 
-    silent = get(ENV, "EPI_SILENT", false)
+    silent = get(ENV, "EPI_SILENT", false) === "true"
     if !silent
         println("Downloading file from " * server)
     end
@@ -502,7 +506,7 @@ function api_request(endpoint, params = Dict(), payload = nothing, database = no
     
     server = get(ENV, "EPI_APISERVER", "")
 
-    silent = get(ENV, "EPI_SILENT", false)
+    silent = get(ENV, "EPI_SILENT", false) === "true"
     if !silent
         println("Posting data to " * server)
     end

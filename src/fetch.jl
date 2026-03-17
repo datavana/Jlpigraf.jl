@@ -106,7 +106,7 @@ function fetch_table(table; columns = [], params = Dict(), db = nothing, maxpage
     columns_str = join(columns, ",")
     params["columns"] = columns_str
     params["idents"] = "id"
-    return api_table(table, params, db, maxpages)
+    return api_table(table, params; db = db, maxpages = maxpages)
 end
 
 """
