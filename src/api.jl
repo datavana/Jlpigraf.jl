@@ -107,8 +107,8 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
     # add extension
     endpoint = parsed_endpoint.path
     endpoint_extension = splitext(endpoint)[2]
-    if endpoint_extension != ""
-        extension = ""
+    if endpoint_extension != "" # endpoint extension is already there and takes precedence
+        extension = "" 
     elseif isnothing(extension)
         extension = ""
     elseif !isnothing(extension) && !startswith(extension, ".")
@@ -585,7 +585,7 @@ function to_epitable(data, source = nothing)
 end
 
 function isLocalServer(server)
-    return startswith(server, "http://localhost") || startswith(server, "http://127.0.0.1")
+    return contains(server, "//localhost") || contains(server, "//127.0.0.1")
 end
 
 function confirmAction()
