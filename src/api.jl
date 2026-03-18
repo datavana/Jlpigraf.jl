@@ -5,46 +5,58 @@
 """
     api_setup(apiserver, apitoken = nothing; verbose = false)
 
-Save API connection settings to environment variables or read ".env"-File
+Save API connection settings: use `apiserver` and `apitoken` or content of the settings file or prompt the user    
 
 Arguments:
-- apiserver: URL of the Epigraf server (including https-protocol)
-- apitoken: Access token. If NULL, you will be asked to enter the token.
+- apiserver: URL of the Epigraf server (including protocol)
+- apitoken: Access token
 - verbose: Show debug messages and the built URLs
 """
-function api_setup(apiserver = nothing, apitoken = nothing; verbose = false)
+function api_setup(apiserver = nothing, apitoken = nothing; verbose = false, settings_file = SETTINGS_FILE)
     
-    if isfile(SETTINGS_FILE)
-        DotEnv.load!(ENV, SETTINGS_FILE)
+    if isfile(settings_file)
+        if (verbose)
+            @info "reading" settings_file
+        end
+        DotEnv.load!(ENV, settings_file)        
     end
 
-    function store_in_env(key, arg, msg)
+    function store_in_env!(env_dict, key, arg, msg)
         if isnothing(arg)
-            if (!haskey(ENV, key))
+            if (!haskey(env_dict, key))
                 print("Please, " * msg * ": ")        
-                ENV[key] = readline()
+                env_dict[key] = readline()
             end 
         else
-            ENV[key] = arg
+            env_dict[key] = arg
         end 
-        return ENV[key]
+        return env_dict[key]
     end
 
-    store_in_env("EPI_APISERVER", apiserver, "enter your server URL")
-    store_in_env("EPI_APITOKEN", apitoken, "enter your access token")    
+    store_in_env!(ENV, "EPI_APISERVER", apiserver, "enter your server URL")
+    store_in_env!(ENV, "EPI_APITOKEN", apitoken, "enter your access token")    
     ENV["EPI_VERBOSE"] = verbose;
-
-    open(SETTINGS_FILE, "w") do io
-        for key in ("EPI_APISERVER", "EPI_APITOKEN")
-            println(io, string(key) * "=" * string(ENV[key]))
-        end
-    end
 
     if (verbose) 
         @info "Using server" ENV["EPI_APISERVER"]        
     end
     return nothing
     
+end
+
+"""
+    api_clear_setup()
+
+Reset API setup
+"""
+function api_clear_setup()    
+    if haskey(ENV, "EPI_APISERVER")
+        delete!(ENV, "EPI_APISERVER")
+    end
+    if haskey(ENV, "EPI_APITOKEN")
+        delete!(ENV, "EPI_APITOKEN")
+    end
+    return nothing
 end
 
 """
