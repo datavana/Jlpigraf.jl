@@ -28,15 +28,15 @@ See Epigraf's [documentation](https://epigraf.inschriften.net/help/coreconcepts/
 ## Usage
 
 ### First steps
-If you are not a registered user of an Epigraf instance, you can access the test version using the following credentials:  
+If you are not a registered user of an Epigraf instance, you can access a test version using the following credentials:  
 URL: https://epigraf.uni-muenster.de  
 Username: epitest  
 Password: epitest.  
 Logging in will give you an overview of the stored test data, e.g., displaying an article list: https://epigraf.uni-muenster.de/epi/epi_movies/articles.
 
-In order to use the API, you first need to inform Jlpigraf of the Epigraf instance you wish to use and authenticate with an API access token.
-An administrator has usually registered you and granted you the appropriate permissions.
-You will find the access token in your user profile. The example below uses a token for a test user.
+To use the API, you first need to inform Jlpigraf of the Epigraf instance you wish to use, then authenticate with an API access token.
+Usually, an administrator will have registered you and granted you the appropriate permissions.
+You can find the access token in your user profile. The example below uses a token for the test user 'epitest'. 
 
 ``` julia
 # Set token to get access to the API
@@ -65,6 +65,11 @@ Fetched 10 records from articles.
   10 │ articles-12         10  La La Land
 ```
 
+If you call `api_setup` without arguments, it will attempt to read the server and token data from a file called 'jlpigraf.env' in your working directory. If this file is not found, the function will prompt you for the required data. 'jlpigraf.env' could look like this:
+```
+EPI_APISERVER=https://epigraf.uni-muenster.de
+EPI_APITOKEN=testapitoken
+```
 
 More examples will be added as the functionality expands. 
 See also [Rpigraf](https://github.com/datavana/rpigraf)'s documentation. 
