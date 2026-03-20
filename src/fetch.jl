@@ -101,8 +101,8 @@ Arguments:
 - db: The database name
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 """
-function fetch_table(table; columns = [], params = Dict(), db = nothing, maxpages = 1)
-    columns = unique(vcat(["id"], columns))
+function fetch_table(table; columns = Union{String, Symbol}[], params = Dict(), db = nothing, maxpages = 1)
+    columns = unique(vcat(["id"], String.(columns)))
     columns_str = join(columns, ",")
     params["columns"] = columns_str
     params["idents"] = "id"
@@ -126,46 +126,46 @@ Arguments:
         In this case, the database name will be extracted from the dataframe.
 - silent: Whether to output a progress bar
 """
-function fetch_entity(ids, params = Dict(), db = nothing, silent = false)
-    if isnothing(db) && hasproperty(ids, :source)
-        db = ids.source["db"]
-    end
+function fetch_entity(ids::Vector{T} where T<:AbstractString; params = Dict(), db = nothing, silent = false)
 
     if !isnothing(db)
         check_is_db(db)
     end
-
-    if isa(ids, DataFrame)
-        ids = ids.id
-    end
-
-    if length(ids) > 1
+    
+    if length(ids) == 0
+        data = to_epitable(DataFrame(), Dict("params" => params, "db" => db))
+        return data
+    else 
         if !silent
             println("Fetching data...")
         end
         data = DataFrame()
 
         for id in ids
-            data = vcat(data, fetch_entity(id, params, db, silent = true))
+            data = vcat(data, fetch_entity(id; params=params, db=db, silent=true))
         end
 
         return data
     end
+    
+end
 
-    if length(ids) == 0
-        data = to_epitable(DataFrame(), Dict("params" => params, "db" => db))
-        return data
-    end
+# extract ids from a data frame
+function fetch_entity(df_id::DataFrame; params = Dict(), db=nothing, silent=false)
+    return fetch_entity(df_id[id, :]; params, db=db, silent=silent)
+end
 
-    check_is_id(ids)
-    id_parts = split(ids, "-")
+function fetch_entity(full_id::T; params = Dict(), db=nothing, silent=false) where T<:AbstractString
+    check_is_id(full_id)
+    id_parts = split(full_id, "-")
     table = id_parts[1]
     id = id_parts[2]
 
-    data = api_table(string(table, "/view/", id), params, db, 1, silent = silent)
+    data = api_table(string(table, "/view/", id), params; db = db, maxpages = 1, silent = silent)
     data = separate_wider_delim(data, :id, "-", ["table", "row"])
     return to_epitable(data)
 end
+
 
 function move_cols_to_front(df, cols)
     remaining_cols = setdiff(names(df), cols)

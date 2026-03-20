@@ -294,7 +294,7 @@ function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent
     fetchmore = true
     while fetchmore
         params["page"] = string(page)
-        url = api_buildurl(endpoint, params, db, "csv")
+        url = api_buildurl(endpoint, params, db, "csv")        
 
         if !silent
             if maxpages == 1
@@ -303,7 +303,7 @@ function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent
                 println("Fetching page " * string(page) * " from " * endpoint * ".")
             end
         end
-        message = nothing
+        message = nothing        
         rows = DataFrame()
         try
             resp = HTTP.get(url)            
@@ -564,14 +564,9 @@ Arguments:
 - source: A named vector of source parameters, containing endpoint, parameters and database name
 """
 function to_epitable(data, source = nothing)
-    # begin hotfix 2026-03-06
-    return data
-    # end hotfix
+        
+    # source could be stored as an attribute to data
     
-    if !isnothing(source)
-        data.source = source
-    end
-
     id_cols = intersect(["database", "table", "row", "type", "norm_iri"], names(data))
     belongsto_id_cols = [col for col in names(data) if endswith(col, "id")]
     belongsto_name_cols = intersect(["project", "article", "section", "item", "property", "footnote"], names(data))
@@ -579,8 +574,7 @@ function to_epitable(data, source = nothing)
     content_cols = setdiff(names(data), vcat(id_cols, belongsto_id_cols, belongsto_name_cols, state_cols))
 
     data = select(data, vcat(id_cols, content_cols, belongsto_name_cols, belongsto_id_cols, state_cols))
-
-    data.class = vcat("epi_tbl", setdiff(data.class, ["epi_tbl"]))
+    
     return data
 end
 
