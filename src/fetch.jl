@@ -152,7 +152,7 @@ end
 
 # extract ids from a data frame
 function fetch_entity(df_id::DataFrame; params = Dict{String, Any}(), db=nothing, silent=false)
-    return fetch_entity(df_id[id, :]; params, db=db, silent=silent)
+    return fetch_entity(df_id.id; params, db=db, silent=silent)
 end
 
 function fetch_entity(full_id::T; params = Dict{String, Any}(), db=nothing, silent=false) where T<:AbstractString

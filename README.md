@@ -6,13 +6,13 @@ The package is still in the early stages. However, the basic functions are alrea
 
 ### Roadmap
 
-| Version | Features |
-| --- | --- |
-| 0.1.0 | Basic API Interaction |
-| 0.2.0 | Fetch tables and entities |
-| 0.3.0 | Distill data from complex structures |
-| 0.4.0 | Import/Update data in Epigraf |
-| 0.5.0 | Batch processing |
+| Version | Features | Status |
+| --- | --- | --- |
+| 0.1.0 | Basic API Interaction | 60 % |
+| 0.2.0 | Fetch tables and entities | 20 % |
+| 0.3.0 | Distill data from complex structures | |
+| 0.4.0 | Import/Update data in Epigraf | |
+| 0.5.0 | Batch processing | |
 
 ## Installation
 Get the package from GitHub:
@@ -65,14 +65,145 @@ Fetched 10 records from articles.
   10 │ articles-12         10  La La Land
 ```
 
-If you call `api_setup` without arguments, it will attempt to read the server and token data from a file called 'jlpigraf.env' in your working directory. If this file is not found, the function will prompt you for the required data. 'jlpigraf.env' could look like this:
+Call `api_setup` without arguments, to read the server and token data from a file called 'jlpigraf.env' in your working directory. If this file is not found, the function will prompt you for the required data. 'jlpigraf.env' could look like this:
 ```
 EPI_APISERVER=https://epigraf.uni-muenster.de
 EPI_APITOKEN=testapitoken
 ```
 
-More examples will be added as the functionality expands. 
+### Examine details in articles
+
+The function `fetch_entity` accepts an ID or a list of IDs or a data frame with IDs and retrieves all entity data.
+
+``` julia
+db = "epi_movies"
+entity_list = fetch_entity(articles, db=db) 
+```
+
+`entity_list` holds metadata in columns such as 'id', 'type', 'articles_id' and 'sections_id', as well a content in columns like 'name', 'lemma' and 'content'.
+
+Epigraf uses the [Relational Article Model](https://epigraf.inschriften.net/help/coreconcepts/model) (RAL). 
+Its structure determines the layout of `entity_list`.
+
+For the following steps consider only three of the articles with the IDs: 'articles-5', 'articles-7', and 'articles-9'.
+``` julia
+id_list = ["articles-5", "articles-7", "articles-9"]
+db = "epi_movies"
+entity_list = fetch_entity(id_list; db=db)
+
+# Show only parts of the data frame
+cols = [:articles_id, :sections_id, :id, :type, :name, :content, :lemma]
+select(entity_list, cols)[1:10]
+```
+
+```
+10×7 DataFrame
+ Row │ articles_id  sections_id  id            type        name       content                            lemma    
+     │ String15?    String15?    String15      String15    String31?  String?                            String7?
+─────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ missing      missing      articles-5    default     Gladiator  missing                            missing
+   2 │ missing      missing      projects-1    default     Movies     missing                            missing
+   3 │ articles-5   missing      sections-10   text        Abstract   missing                            missing
+   4 │ articles-5   sections-10  items-6       text        missing    Gladiator 🏟️ is a gripping tale o…  missing
+   5 │ articles-5   missing      sections-9    categories  Genres     missing                            missing
+   6 │ articles-5   sections-9   items-5       categories  missing    missing                            missing
+   7 │ missing      missing      properties-1  categories  missing    missing                            History
+   8 │ articles-5   missing      sections-48   images      Images     missing                            missing
+   9 │ articles-5   sections-48  items-28      images      missing    missing                            missing
+  10 │ missing      missing      articles-7    default     Star Wars  missing                            missing
+
+```
+
+Examine the descriptions by selecting 'content' in rows of the 'text' type:
+``` julia
+
+cols = [:articles_id, :sections_id, :type, :content];
+description_list = subset(e_list[:, cols], :sections_id => ByRow(!ismissing), :type => ByRow(isequal("text")));
+show(description_list, truncate=49)
+```
+
+```
+3×4 DataFrame
+ Row │ articles_id  sections_id  type      content
+     │ String15?    String15?    String15  String?
+─────┼─────────────────────────────────────────────────────────────────────────────────────────
+   1 │ articles-5   sections-10  text      Gladiator 🏟️ is a gripping tale of power and reveng…
+   2 │ articles-7   sections-14  text      Star Wars 🌌 is a monumental franchise set in a ga…
+   3 │ articles-9   sections-18  text      Pirates of the Caribbean 🏴\u200d☠️ is a swashbuckl…
+```
+
+``` julia
+description_list[2, :content]
+```
+
+> "Star Wars 🌌 is a monumental franchise set in a galaxy far, far away. The series blends elements of fantasy and sci-fi, featuring epic battles between the dark and light sides of the Force. Iconic characters like Luke Skywalker, Darth Vader, and Yoda are central to its storytelling. The franchise has expanded over decades, influencing multiple generations with its themes of heroism, redemption, and the struggle against tyranny. Star Wars remains a cultural phenomenon with a massive fanbase around the world."
+
+### Access the RAL-Tree
+
+The Relational Article Model is a nested structure. For example, an *article* contains *sections* with one or more *items*, that refer to a *property*.
+
+The following example shows how to extract genre information for the movies.
+
+Firstly, identify the relevant *sections* and join them to *items* of the 'categories' type. 
+``` julia
+genre_section_list = subset(e_list[:, [:id, :name, :articles_id]], :name => ByRow(isequal("Genres")))
+item_list = subset(e_list[:, [:type, :sections_id, :property]], :type => ByRow(isequal("categories")))
+genre_item_list = innerjoin(item_list, genre_section_list, on = :sections_id => :id, matchmissing = :notequal)
+
+```
+
+```
+3×5 DataFrame
+ Row │ type        sections_id  property       name       articles_id 
+     │ String15    String15?    String15?      String31?  String15?
+─────┼────────────────────────────────────────────────────────────────
+   1 │ categories  sections-9   properties-1   Genres     articles-5
+   2 │ categories  sections-13  properties-2   Genres     articles-7
+   3 │ categories  sections-17  properties-12  Genres     articles-9
+```
+
+Join the property rows to the items.
+
+``` julia
+genre_list = innerjoin(e_list[:, [:id, :lemma]], genre_item_list, on = :id => :property)
+
+```
+
+```
+3×6 DataFrame
+ Row │ id             lemma     type        sections_id  name       articles_id
+     │ String15       String7?  String15    String15?    String31?  String15?
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │ properties-1   History   categories  sections-9   Genres     articles-5
+   2 │ properties-2   Scifi     categories  sections-13  Genres     articles-7
+   3 │ properties-12  Fantasy   categories  sections-17  Genres     articles-9
+
+```
+
+
+Join the title rows to the genre property rows.
+
+``` julia
+title_list = subset(e_list[:, [:id, :name]], :id => ByRow(startswith("articles")))
+
+genre_title_list = innerjoin(
+    title_list, 
+    rename(genre_list[:, [:lemma, :id, :articles_id]], [:lemma => :genre, :id => :genre_id]),
+    on = :id => :articles_id)
+```
+
+```
+3×4 DataFrame
+ Row │ id          name                      genre     genre_id
+     │ String15    String31?                 String7?  String15
+─────┼───────────────────────────────────────────────────────────────
+   1 │ articles-5  Gladiator                 History   properties-1
+   2 │ articles-7  Star Wars                 Scifi     properties-2
+   3 │ articles-9  Pirates of the Caribbean  Fantasy   properties-12
+
+```
+
+The package includes features that automate the merging of different types of content. This greatly simplifies the process of working with data stored in Epigraf.
+
+More examples will be added as additional functionality is implemented. 
 See also [Rpigraf](https://github.com/datavana/rpigraf)'s documentation. 
-
-
-
