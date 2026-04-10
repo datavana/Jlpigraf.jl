@@ -18,7 +18,7 @@ The package is still in the early stages. However, the basic functions are alrea
 Get the package from GitHub:
 ``` julia
 using Pkg
-Pkg.add(url="https://github.com/zweiglimmergneis/Jlpigraf.jl.git")
+Pkg.add(url="https://github.com/datavana/Jlpigraf.jl.git")
 using Jlpigraf
 
 ```
@@ -45,7 +45,7 @@ api_setup("https://epigraf.uni-muenster.de", "testapitoken")
 # Get an articles table
 articles = fetch_table("articles"; columns=[:id, :signature, :name], db = "epi_movies", maxpages = 2)
 ```
-`articles` holds a DataFrame with article data, corresponding to the top level of the Relational Article Model.
+`articles` holds a Data Frame  with article data, corresponding to the top level of the Relational Article Model.
 
 ```
 Fetched 10 records from articles.
