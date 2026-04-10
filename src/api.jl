@@ -10,18 +10,18 @@ Save API connection settings: use `apiserver` and `apitoken` or content of the s
 Arguments:
 - apiserver: URL of the Epigraf server (including protocol)
 - apitoken: Access token
-- verbose: Show debug messages and the built URLs
+- verbose: Show debug messages and URLs
 """
-function api_setup(apiserver = nothing, apitoken = nothing; verbose = false, settings_file = SETTINGS_FILE)
+function api_setup(apiserver = nothing, apitoken = nothing; verbose::Union{Nothing, Bool} = nothing, settings_file = SETTINGS_FILE)
     
-    if isfile(settings_file)
-        if (verbose)
-            @info "reading" settings_file
-        end
-        DotEnv.load!(ENV, settings_file)        
-    end
+    if isfile(settings_file)        
+        @info "Reading " settings_file        
+        DotEnv.load!(ENV, settings_file)
+    else
+        @info "No settings file found"     
+    end    
 
-    function store_in_env!(env_dict, key, arg, msg)
+    function store_user_response_in_env!(env_dict, key, arg, msg)
         if isnothing(arg)
             if (!haskey(env_dict, key))
                 print("Please, " * msg * ": ")        
@@ -33,10 +33,13 @@ function api_setup(apiserver = nothing, apitoken = nothing; verbose = false, set
         return env_dict[key]
     end
 
-    store_in_env!(ENV, "EPI_APISERVER", apiserver, "enter your server URL")
-    store_in_env!(ENV, "EPI_APITOKEN", apitoken, "enter your access token")    
-    ENV["EPI_VERBOSE"] = verbose;
-
+    store_user_response_in_env!(ENV, "EPI_APISERVER", apiserver, "enter your server URL")
+    store_user_response_in_env!(ENV, "EPI_APITOKEN", apitoken, "enter your access token")    
+    
+    if !isnothing(verbose)
+        ENV["EPI_VERBOSE"] = verbose ? "true" : "false"
+    end
+    
     if (verbose) 
         @info "Using server" ENV["EPI_APISERVER"]        
     end
@@ -86,13 +89,12 @@ Arguments:
 - database: The database name
 - extension: Extension added to the URL path, defaults to json.
 """
-function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json")
+function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json"; silent = nothing)
 
     server = get(ENV, "EPI_APISERVER", "")
     token = get(ENV, "EPI_APITOKEN", "")
-    verbose = get(ENV, "EPI_VERBOSE", false) === "true"
-    silent = get(ENV, "EPI_SILENT", false) === "true"
-    
+    verbose = get(ENV, "EPI_VERBOSE", "false") === "true"
+    silent = isnothing(silent) ? get(ENV, "EPI_SILENT", "false") === "true" : silent    
 
     uri_query = Dict("token" => token)
 
@@ -128,8 +130,9 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
         query = uri_query
     )
     built_url = string(uri)
+
     if verbose && !silent
-        println(built_url)
+        @info built_url        
     end
 
     return built_url
@@ -285,16 +288,17 @@ Arguments:
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 - silent: Whether to output status messages
 """
-function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent = false)    
+function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent = false)
 
     data = DataFrame()
     rows = DataFrame()
     page = 1
 
+
     fetchmore = true
     while fetchmore
         params["page"] = string(page)
-        url = api_buildurl(endpoint, params, db, "csv")        
+        url = api_buildurl(endpoint, params, db, "csv", silent=silent)        
 
         if !silent
             if maxpages == 1
@@ -302,6 +306,9 @@ function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent
             else
                 println("Fetching page " * string(page) * " from " * endpoint * ".")
             end
+            csv_maxwarnings = 1000;
+        else
+            csv_maxwarnings = 7;
         end
         message = nothing        
         rows = DataFrame()
@@ -310,7 +317,7 @@ function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent
 
             if resp.status == 200
                 body = String(resp.body)
-                rows = CSV.read(IOBuffer(body), delim = ';', DataFrame)            
+                rows = CSV.read(IOBuffer(body), delim = ';', DataFrame; maxwarnings=csv_maxwarnings)            
             else                
                 message = "Error " * string(resp.status) * ": " * String(resp.body)
             end
@@ -565,7 +572,7 @@ Arguments:
 """
 function to_epitable(data, source = nothing)
         
-    # source could be stored as an attribute to data
+    # source can be stored as an attribute to data (not implemented)
     
     id_cols = intersect(["database", "table", "row", "type", "norm_iri"], names(data))
     belongsto_id_cols = [col for col in names(data) if endswith(col, "id")]

@@ -223,7 +223,37 @@ function join_path(filename::AbstractString, filepath::Union{String, Nothing} = 
 end
 
 """
+    subset_by_col(df::AbstractDataFrame, col_cmp...)
 
+Filter `df` by comparing the values in `col_cmp` with the columns in `df`
+
+# Example
+``` julia
+julia> df = DataFrame(
+    a = ["w", "d", "f", "k", "v", "d"], 
+    b = [1, 2, 1, 2, 1, 2], 
+    c = [1.2, 7.8, 3.1, 5.0, 4.4, 3.2]
+)
+    
+6×3 DataFrame
+ Row │ a       b      c
+     │ String  Int64  Float64
+─────┼────────────────────────
+   1 │ w           1      1.2
+   2 │ d           2      7.8
+   3 │ f           1      3.1
+   4 │ k           2      5.0
+   5 │ v           1      4.4
+   6 │ d           2      3.2
+
+julia> subset_by_col(df, :a => "d", :b => 2)
+2×3 DataFrame
+ Row │ a       b      c
+     │ String  Int64  Float64
+─────┼────────────────────────
+   1 │ d           2      7.8
+   2 │ d           2      3.2
+```   
 """
 function subset_by_col(df::AbstractDataFrame, col_cmp...)
     col_cond = []
@@ -233,10 +263,5 @@ function subset_by_col(df::AbstractDataFrame, col_cmp...)
     return subset(df, col_cond...)
 end
 
-subset_by_col(col_cmp...) = function(df)
-    col_cond = []
-    for cc in col_cmp
-        push!(col_cond, cc[1] => x -> x.==cc[2])
-    end
-    return subset(df, col_cond...)
-end
+# For use in a pipe
+subset_by_col(col_cmp...) = df -> subset_by_col(df, col_cmp...)

@@ -126,7 +126,7 @@ Arguments:
         In this case, the database name will be extracted from the dataframe.
 - silent: Whether to output a progress bar
 """
-function fetch_entity(ids::Vector{T} where T<:AbstractString; params = Dict(), db = nothing, silent = false)
+function fetch_entity(ids::Vector{T}; params = Dict{String, Any}(), db=nothing, silent=false) where T<:AbstractString
 
     if !isnothing(db)
         check_is_db(db)
@@ -142,7 +142,7 @@ function fetch_entity(ids::Vector{T} where T<:AbstractString; params = Dict(), d
         data = DataFrame()
 
         for id in ids
-            data = vcat(data, fetch_entity(id; params=params, db=db, silent=true))
+            data = vcat(data, fetch_entity(id; params=params, db=db, silent=silent); cols=:union)
         end
 
         return data
@@ -151,11 +151,11 @@ function fetch_entity(ids::Vector{T} where T<:AbstractString; params = Dict(), d
 end
 
 # extract ids from a data frame
-function fetch_entity(df_id::DataFrame; params = Dict(), db=nothing, silent=false)
+function fetch_entity(df_id::DataFrame; params = Dict{String, Any}(), db=nothing, silent=false)
     return fetch_entity(df_id[id, :]; params, db=db, silent=silent)
 end
 
-function fetch_entity(full_id::T; params = Dict(), db=nothing, silent=false) where T<:AbstractString
+function fetch_entity(full_id::T; params = Dict{String, Any}(), db=nothing, silent=false) where T<:AbstractString
     check_is_id(full_id)
     id_parts = split(full_id, "-")
     table = id_parts[1]
