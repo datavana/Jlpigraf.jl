@@ -1,9 +1,26 @@
-# Remove NA entries from a list
+"""
+    na_omit_list(object::Vector{Any})::Vector{Any}
+
+Remove NA entries from a list.
+
+# Arguments
+- `object`: A vector from which to remove NA entries.
+"""
 function na_omit_list(object::Vector{Any})::Vector{Any}
-    return object[.!all.(isnan.(object))]
+    error("not defined")
 end
 
-# Ask user to confirm script execution
+"""
+    confirm_action()::Bool
+
+Ask user to confirm script execution.
+
+# Arguments
+- None. Uses `EPI_SILENT` environment variable to determine if prompts should be shown.
+
+# Returns
+- `true` if confirmed or silent mode is active, otherwise throws an error.
+"""
 function confirm_action()::Bool
     silent = get(ENV, "epi_silent", "FALSE")
     if silent == "TRUE"
@@ -12,38 +29,67 @@ function confirm_action()::Bool
 
     print("Are you sure you want to proceed? (y/n)  ")
     user_input = readline()
-    if user_input != "y"
+    if !in(user_input, ("y", "yes"))
         error("Canceled")
     end
     return true
 end
 
-# Check whether the URL is on a local server
+"""
+    is_local_server(server::AbstractString)::Bool
+
+Check whether the URL is on a local server.
+
+# Arguments
+- `server`: The server URL to check.
+"""
 function is_local_server(server::AbstractString)::Bool
-    return startswith(server, "https://127.0.0.1") ||
-           startswith(server, "http://127.0.0.1") ||
+    return startswith(server, "https://127.") ||
+           startswith(server, "http://127.") ||
            startswith(server, "https://localhost") ||
            startswith(server, "http://localhost")
 end
 
-# Remove HTML entities
-function unescape_html(str::AbstractString)::AbstractString
-    if isnan(str)
+"""
+    unescape_html(str)
+
+Remove HTML entities from a string.
+
+# Arguments
+- `str`: The string containing HTML entities.
+"""
+function unescape_html(str)
+    if ismissing(str)
         return str
     else
-        # Using Gumbo for HTML parsing
-        doc = parsehtml("<x>" * str * "</x>")
-        return textContent(doc.root)
+        error("unescape_html not defined")
     end
 end
 
-# Remove empty columns
-function drop_empty_columns(df::DataFrame)::DataFrame
-    return df[:, findall(col -> any(.!isnan.(col)), eachcol(df))]
+"""
+    drop_empty_columns!(df::DataFrame)::DataFrame
+
+Remove empty columns from a DataFrame.
+
+# Arguments
+- `df`: The DataFrame to process.
+"""
+function drop_empty_columns!(df)
+    select!(df, [col for col in names(df) if any(!ismissing, df[!, col])])
+    return df
 end
 
-# Add columns if they are missing from the data frame
-function add_missing_columns(df::DataFrame, cols::Vector{String}, default::Any = missing)::DataFrame
+"""
+    add_missing_columns!(df::DataFrame, cols::Vector{String}, default::Any = missing)::DataFrame
+
+Add columns if they are missing from the DataFrame.
+
+# Arguments
+- `df`: The DataFrame to process.
+- `cols`: Vector of column names to ensure exist.
+- `default`: Default value for new columns, defaults to `missing`.
+"""
+function add_missing_columns!(df::DataFrame, cols::Vector{String}, default::Any = missing)::DataFrame
     missing_cols = setdiff(cols, names(df))
     for col in missing_cols
         df[!, col] .= default
@@ -51,56 +97,107 @@ function add_missing_columns(df::DataFrame, cols::Vector{String}, default::Any =
     return df
 end
 
-# Shift selected columns to the front
-function move_cols_to_front(df::DataFrame, cols::Vector{String})::DataFrame
+"""
+    move_cols_to_front!(df::DataFrame, cols::Vector{String})::DataFrame
+
+Shift selected columns to the front of a DataFrame.
+
+# Arguments
+- `df`: The DataFrame to process.
+- `cols`: Vector of column names to move to the front.
+"""
+function move_cols_to_front!(df::DataFrame, cols::Vector{String})::DataFrame
     existing_cols = intersect(cols, names(df))
     other_cols = setdiff(names(df), existing_cols)
-    return df[:, vcat(existing_cols, other_cols)]
+    select!(df, vcat(existing_cols, other_cols)...)
+    return df
 end
 
-# Shift selected columns to the end
-function move_cols_to_end(df::DataFrame, cols::Vector{String})::DataFrame
+"""
+    move_cols_to_end!(df::DataFrame, cols::Vector{String})::DataFrame
+
+Shift selected columns to the end of a DataFrame.
+
+# Arguments
+- `df`: The DataFrame to process.
+- `cols`: Vector of column names to move to the end.
+"""
+function move_cols_to_end!(df::DataFrame, cols::Vector{String})::DataFrame
     existing_cols = intersect(cols, names(df))
     other_cols = setdiff(names(df), existing_cols)
-    return df[:, vcat(other_cols, existing_cols)]
+    select!(df, vcat(other_cols, existing_cols)...)
+    return df    
 end
 
-# Parse JSON columns
+"""
+    parse_json(data::Vector{String})::Vector{Any}
+
+Parse JSON columns from a vector of strings.
+
+# Arguments
+- `data`: Vector of JSON strings to parse.
+"""
 function parse_json(data::Vector{String})::Vector{Any}
     data[data .== "[]"] .= "{}"
-    data[isnan.(data)] .= "{}"
+    data[ismissing.(data)] .= "{}"
     return JSON.parse.(data)
 end
 
-# Merge list elements by their name
-function merge_lists(l::Vector{Vector{Pair{String, Any}}})::Dict{String, Any}
-    keys = unique(vcat([keys(d) for d in l]...))
-    merged = Dict{String, Any}()
-    for key in keys
-        merged[key] = vcat([get(d, key, []) for d in l]...)
-    end
-    return merged
+"""
+    merge_lists(l)
+
+Merge list elements by their name.
+
+# Arguments
+- `l`: Vector of vectors of name-value pairs to merge.
+"""
+function merge_lists(l)
+    error("merge_lists not defined; use merge(d1, d2) for dictionaries")    
 end
 
-# Convert a number to letters, e.g., 3 becomes "c"
+"""
+    num2abc(number::Int, base::Int = 26)::String
+
+Convert a number to letters (e.g., 3 becomes "c").
+
+# Arguments
+- `number`: The number to convert.
+- `base`: The base for conversion, defaults to 26.
+"""
 function num2abc(number::Int, base::Int = 26)::String
-    n = ceil(log((1 / (1 - base) - 1 - number) * (1 - base)) / log(base)) - 1
-    digits = encode(number - sum(base .^ (0:n-1)), fill(base, n))
-    return join(['a' + d for d in digits])
+    string('a' + mod(number - 1, base))
 end
 
-# Convert letters to a number, e.g., "c" becomes 3
+"""
+    abc2num(s::AbstractString, base::Int = 26)::Int
+
+Convert letters to a number (e.g., "c" becomes 3).
+
+# Arguments
+- `s`: The string to convert.
+- `base`: The base for conversion, defaults to 26.
+"""
 function abc2num(s::AbstractString, base::Int = 26)::Int
-    s = lowercase(s)
-    chars = collect(s)
-    digits = [Int(c) - Int('a') for c in chars]
-    n = length(digits)
-    offset = n > 1 ? sum(base .^ (0:n-2)) : 0
-    number = sum(digits .* base .^ reverse(0:n-1))
-    return number + offset + 1
+    Int(s[1] - 'a' + 1)
+    # version that accepts multicharacter strings
+    # s = lowercase(s)
+    # chars = collect(s)
+    # digits = [Int(c) - Int('a') for c in chars]
+    # n = length(digits)
+    # offset = n > 1 ? sum(base .^ (0:n-2)) : 0
+    # number = sum(digits .* base .^ reverse(0:n-1))
+    # return number + offset + 1
 end
 
-# Converts "b" using the "base"
+"""
+    decode(b::Vector{Int}, base::Vector{Int})::Int
+
+Converts a vector "b" using the given base.
+
+# Arguments
+- `b`: The vector to decode.
+- `base`: The base vector for decoding.
+"""
 function decode(b::Vector{Int}, base::Vector{Int})::Int
     if length(base) == 1
         base = fill(base[1], length(b))
@@ -110,18 +207,33 @@ function decode(b::Vector{Int}, base::Vector{Int})::Int
     return number
 end
 
-# Converts numbers using the radix vector
+"""
+    encode(number::Int, base::Vector{Int})::Vector{Int}
+
+Converts numbers using the radix vector.
+
+# Arguments
+- `number`: The number to encode.
+- `base`: The base vector for encoding.
+"""
 function encode(number::Int, base::Vector{Int})::Vector{Int}
     n_base = length(base)
     result = zeros(Int, n_base, length(number))
     for i in n_base:-1:1
         result[i, :] = base[i] > 0 ? number .% base[i] : number
-        number = base[i] > 0 ? number .÷ base[i] : 0
+        number = base[i] > 0 ? number .\ base[i] : 0
     end
     return length(number) == 1 ? result[:, 1] : result
 end
 
-# Create distinct pseudonyms
+"""
+    pseudonyms(n::Int)::Vector{String}
+
+Create distinct pseudonyms.
+
+# Arguments
+- `n`: The number of pseudonyms to create.
+"""
 function pseudonyms(n::Int)::Vector{String}
     letters_consonant = ["b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q", "r", "s", "t", "v", "w", "x", "z"]
     letters_vocal = ["a", "e", "i", "o", "u"]
@@ -153,7 +265,14 @@ function pseudonyms(n::Int)::Vector{String}
     return candidates
 end
 
-# Bind rows of dataframes even if column types differ
+"""
+    bind_rows_char(dataframes::Vector{DataFrame})::DataFrame
+
+Bind rows of DataFrames even if column types differ.
+
+# Arguments
+- `dataframes`: Vector of DataFrames to bind.
+"""
 function bind_rows_char(dataframes::Vector{DataFrame})::DataFrame
     col_names = unique(vcat([names(df) for df in dataframes]...))
     col_classes = Dict{String, Vector{DataType}}()
@@ -181,16 +300,29 @@ function bind_rows_char(dataframes::Vector{DataFrame})::DataFrame
     return vcat(dataframes...)
 end
 
-# Merge vectors
+"""
+    merge_vectors(values::Dict{String, Any}, default::Dict{String, Any})::Dict{String, Any}
+
+Merge values dictionary with default dictionary.
+
+# Arguments
+- `values`: Dictionary with values to merge.
+- `default`: Default dictionary to use as base.
+"""
 function merge_vectors(values::Dict{String, Any}, default::Dict{String, Any})::Dict{String, Any}
-    merged = copy(default)
-    for (key, value) in values
-        merged[key] = value
-    end
-    return merged
+    error("merge_vectors is not defined; use merge(d1, d2) for dictionaries")
 end
 
-# Set default values
+"""
+    default_values(df::DataFrame, colname::String, default::Any)::DataFrame
+
+Set default values for a column in a DataFrame.
+
+# Arguments
+- `df`: The DataFrame to process.
+- `colname`: The column name.
+- `default`: The default value to set.
+"""
 function default_values(df::DataFrame, colname::String, default::Any)::DataFrame
     if !(colname in names(df))
         df[!, colname] .= default
@@ -198,34 +330,27 @@ function default_values(df::DataFrame, colname::String, default::Any)::DataFrame
     return df
 end
 
-# Get file extension from URL path component
+"""
+    get_extension(path::AbstractString)::String
+
+Get file extension from URL path component.
+
+# Arguments
+- `path`: The URL path to extract the extension from.
+"""
 function get_extension(path::AbstractString)::String
-    filename = basename(path)
-    if occursin(r"\.", filename)
-        ext = match(r"\.([^.]*)$", filename).captures[1]
-        if startswith(filename, ".") && !occursin(r"\..+\.", filename)
-            return ""
-        else
-            return ext
-        end
-    else
-        return ""
-    end
+    error("get_extension is not defined, use splitext(path) |> last" )
 end
 
-# Join folder and filename
-function join_path(filename::AbstractString, filepath::Union{String, Nothing} = nothing)::String
-    if isnothing(filepath) || filepath == ""
-        return filename
-    else
-        return joinpath(filepath, filename)
-    end
-end
 
 """
     subset_by_col(df::AbstractDataFrame, col_cmp...)
 
-Filter `df` by comparing the values in `col_cmp` with the columns in `df`
+Filter `df` by comparing the values in `col_cmp` with the columns in `df`.
+
+# Arguments
+- `df`: The DataFrame to filter.
+- `col_cmp`: Column comparisons in the form `column => value`.
 
 # Example
 ``` julia
@@ -253,7 +378,7 @@ julia> subset_by_col(df, :a => "d", :b => 2)
 ─────┼────────────────────────
    1 │ d           2      7.8
    2 │ d           2      3.2
-```   
+```    
 """
 function subset_by_col(df::AbstractDataFrame, col_cmp...)
     col_cond = []
@@ -263,5 +388,12 @@ function subset_by_col(df::AbstractDataFrame, col_cmp...)
     return subset(df, col_cond...)
 end
 
-# For use in a pipe
+"""
+    subset_by_col(col_cmp...)
+
+For use in a pipe. Creates a function that filters a DataFrame by column comparisons.
+
+# Arguments
+- `col_cmp`: Column comparisons in the form `column => value`.
+"""
 subset_by_col(col_cmp...) = df -> subset_by_col(df, col_cmp...)

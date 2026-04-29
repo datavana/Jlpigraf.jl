@@ -7,10 +7,10 @@
 
 Save API connection settings: use `apiserver` and `apitoken` or content of the settings file or prompt the user    
 
-Arguments:
-- apiserver: URL of the Epigraf server (including protocol)
-- apitoken: Access token
-- verbose: Show debug messages and URLs
+# Arguments
+- `apiserver`: URL of the Epigraf server (including protocol)
+- `apitoken`: Access token
+- `verbose`: Show debug messages and URLs
 """
 function api_setup(apiserver = nothing, apitoken = nothing; verbose::Union{Nothing, Bool} = nothing, settings_file = SETTINGS_FILE)
     
@@ -73,8 +73,8 @@ In silent mode, all user prompts are automatically confirmed.
 Be careful, this will skip the prompt to confirm operations
 on the live server.
 
-# Arguments:
-- silent: Boolean
+# Arguments
+- `silent`: Boolean
 """
 function api_silent(silent = false)
     ENV["EPI_SILENT"] = silent
@@ -85,11 +85,11 @@ end
 
 Build base URL
 
-Arguments:
-- endpoint: The endpoint, e.g. articles/import
-- query: Query parameters for the endpoint
-- database: The database name
-- extension: Extension added to the URL path, defaults to json.
+# Arguments
+- `endpoint`: The endpoint, e.g. articles/import
+- `query`: Query parameters for the endpoint
+- `database`: The database name
+- `extension`: Extension added to the URL path, defaults to json.
 """
 function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json"; silent::Union{Nothing, Bool} = nothing)
 
@@ -145,11 +145,11 @@ end
 
 Create and execute a job
 
-Arguments:
-- endpoint: The endpoint supporting job creation
-- params: Query parameters
-- database: The selected database
-- payload: The data posted to the job endpoint
+# Arguments
+- `endpoint`: The endpoint supporting job creation
+- `params`: Query parameters
+- `database`: The selected database
+- `payload`: The data posted to the job endpoint
 """
 function api_job_create(endpoint, params, database, payload = nothing)
     
@@ -202,8 +202,8 @@ end
 
 Execute a job
 
-Arguments:
-- job_id: The job ID
+# Arguments
+- `job_id`: The job ID
 """
 function api_job_execute(job_id)    
     println("Starting job " * string(job_id) * ".")
@@ -283,12 +283,12 @@ Download tables
 
 Fetches tables such as articles, projects or properties
 
-Arguments:
-- endpoint: The endpoint path (e.g. "articles/index" or "articles/view/1")
-- params: A named list of query params
-- db: The database name
-- maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
-- silent: Whether to output status messages
+# Arguments
+- `endpoint`: The endpoint path (e.g. "articles/index" or "articles/view/1")
+- `params`: A named list of query params
+- `db`: The database name
+- `maxpages`: Maximum number of pages to request. Set to 1 for non-paginated tables.
+- `silent`: Whether to output status messages
 """
 function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent = false)
 
@@ -367,11 +367,11 @@ end
 
 Post data to epigraf
 
-Arguments:
-- endpoint: The endpoint path
-- params: Query parameters
-- payload: The data posted to the endpoint
-- database: The selected database
+# Arguments
+- `endpoint`: The endpoint path
+- `params`: Query parameters
+- `payload`: The data posted to the endpoint
+- `database`: The selected database
 """
 function api_post(endpoint, params = Dict(), payload = nothing, database = nothing)
     result = api_request(endpoint, params, payload, database, HTTP.post)
@@ -383,13 +383,13 @@ end
 
 Upload file to epigraf
 
-Arguments:
-- endpoint: The endpoint path
-- params: Query parameters
-- filepath: A full path to the local file
-- mimetype: The mime type of the file. Will be guessed if empty.
-- overwrite: Whether to overwrite existing files.
-- database: The selected database
+# Arguments
+- `endpoint`: The endpoint path
+- `params`: Query parameters
+- `filepath`: A full path to the local file
+- `mimetype`: The mime type of the file. Will be guessed if empty.
+- `overwrite`: Whether to overwrite existing files.
+- `database`: The selected database
 """
 function api_upload(endpoint, params = Dict(), filepath = nothing, mimetype = nothing, overwrite = false, database = nothing)
     payload = Dict("FileData[0]" => filepath, "FileOverwrite" => overwrite ? "1" : "0")
@@ -402,13 +402,13 @@ end
 
 Download a file from Epigraf
 
-Arguments:
-- endpoint: The endpoint path.
-- params: Query parameters.
-- filename: A file name or a full path to the local file.
-- filepath: A target folder path
-- overwrite: Whether to overwrite existing files.
-- database: The selected database.
+# Arguments
+- `endpoint`: The endpoint path.
+- `params`: Query parameters.
+- `filename`: A file name or a full path to the local file.
+- `filepath`: A target folder path
+- `overwrite`: Whether to overwrite existing files.
+- `database`: The selected database.
 """
 function api_download(endpoint, params = Dict(), filename = nothing, filepath = nothing, overwrite = false, database = nothing)    
     server = get(ENV, "EPI_APISERVER", "")
@@ -447,11 +447,11 @@ end
 
 Delete epigraf data
 
-Arguments:
-- endpoint: The endpoint path
-- params: Query parameters
-- payload: The data posted to the endpoint
-- database: The selected database
+# Arguments
+- `endpoint`: The endpoint path
+- `params`: Query parameters
+- `payload`: The data posted to the endpoint
+- `database`: The selected database
 """
 function api_delete(endpoint, params = Dict(), payload = nothing, database = nothing)
     result = api_request(endpoint, params, payload, database, HTTP.delete)
@@ -469,18 +469,18 @@ The function supports uploading all data related to articles:
 articles, sections, items, links, footnotes, properties, projects, users, types.
 The IRI path in the ID column of the dataframe must contain the specific table name.
 
-Arguments:
-- data: A dataframe with the column `id`.
+# Arguments
+- `data`: A dataframe with the column `id`.
          Additional columns such as norm_data will be written to the record.
          The id must either be a a valid IRI path (e.g. properties/objecttypes/xxx)
          or an id prefixed by the table name (e.g. properties-12).
          Patching properties with prefixed ids requires a `type` column
          that contains the property type.
          Column names with table names as prefixes will be extracted, if wide is set to TRUE (default).
-- db: The database name
-- table: Optional: Check that the data only contains rows for a specific table
-- type: Optional: Check that the data only contains rows with a specific type
-- wide: Convert wide format to long format.
+- `db`: The database name
+- `table`: Optional: Check that the data only contains rows for a specific table
+- `type`: Optional: Check that the data only contains rows with a specific type
+- `wide`: Convert wide format to long format.
          If TRUE, column names prefixed with "properties", "items", "sections", "articles"
          and "projects" followed by a dot (e.g. "properties.id",
         "properties.lemma") will be extracted and patched as additional records.
@@ -515,13 +515,13 @@ end
 
 Send request to epigraf
 
-Arguments:
-- endpoint: The endpoint supporting job creation
-- params: Query parameters
-- payload: The data posted to the endpoint
-- database: The selected database
-- method: One of the HTTP functions (HTTP.post, HTTP.delete)
-- encode: Payload encoding. Passed to the HTTP method function.
+# Arguments
+- `endpoint`: The endpoint supporting job creation
+- `params`: Query parameters
+- `payload`: The data posted to the endpoint
+- `database`: The selected database
+- `method`: One of the HTTP functions (HTTP.post, HTTP.delete)
+- `encode`: Payload encoding. Passed to the HTTP method function.
 """
 function api_request(endpoint, params = Dict(), payload = nothing, database = nothing, method = HTTP.post, encode = "json")
     
@@ -568,9 +568,9 @@ end
 
 Add the epi_tbl class and make it remember its source
 
-Arguments:
-- data: A tibble
-- source: A named vector of source parameters, containing endpoint, parameters and database name
+# Arguments
+- `data`: A tibble
+- `source`: A named vector of source parameters, containing endpoint, parameters and database name
 """
 function to_epitable(data, source = nothing)
         
