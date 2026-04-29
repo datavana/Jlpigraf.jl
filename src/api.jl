@@ -38,6 +38,8 @@ function api_setup(apiserver = nothing, apitoken = nothing; verbose::Union{Nothi
     
     if !isnothing(verbose)
         ENV["EPI_VERBOSE"] = verbose ? "true" : "false"
+    else
+        verbose = false
     end
     
     if (verbose) 
@@ -50,7 +52,7 @@ end
 """
     api_clear_setup()
 
-Reset API setup
+Clear entries in ENV
 """
 function api_clear_setup()    
     if haskey(ENV, "EPI_APISERVER")
@@ -89,7 +91,7 @@ Arguments:
 - database: The database name
 - extension: Extension added to the URL path, defaults to json.
 """
-function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json"; silent = nothing)
+function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json"; silent::Union{Nothing, Bool} = nothing)
 
     server = get(ENV, "EPI_APISERVER", "")
     token = get(ENV, "EPI_APITOKEN", "")

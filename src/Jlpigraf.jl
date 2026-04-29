@@ -6,7 +6,7 @@ using HTTP, URIs
 using JSON3, CSV
 using DataFrames
 
-export api_setup, api_fetch
+export api_setup, api_clear_setup, api_fetch
 export fetch_table, fetch_entity
 export subset_by_col
 
