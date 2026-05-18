@@ -24,7 +24,7 @@ function api_fetch(table, params = Dict(); db = nothing, maxpages = 1)
     df.table = [match(r"^[a-z]+", id).match for id in df.id]
     df.database = db
     df = unique(df)
-    df = move_cols_to_front(df, ["database", "table", "type", "id"])
+    move_cols_to_front!(df, ["database", "table", "type", "id"])
     return df
 end
 
@@ -82,7 +82,7 @@ function db_fetch(table, params = Dict(), db = nothing)
     end
 
     df = drop_empty_columns(df)
-    df = move_cols_to_front(df, ["database", "table", "type", "id"])
+    move_cols_to_front!(df, ["database", "table", "type", "id"])
     return df
 end
 
@@ -167,23 +167,3 @@ function fetch_entity(full_id::T; params = Dict{String, Any}(), db=nothing, sile
 end
 
 
-function move_cols_to_front(df, cols)
-    remaining_cols = setdiff(names(df), cols)
-    return select(df, vcat(cols, remaining_cols))
-end
-
-function drop_empty_columns(df)
-    return select(df, [col for col in names(df) if any(!ismissing, df[!, col])])
-end
-
-function check_is_db(db)
-    return true
-end
-
-function check_is_id(id)
-    return true
-end
-
-function separate_wider_delim(df, col, delim, names)
-    return df
-end

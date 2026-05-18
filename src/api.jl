@@ -599,14 +599,3 @@ function confirmAction()
     end
 end
 
-function epi_is_iripath(id, table, type)
-    return true
-end
-
-function epi_is_id(id, table)
-    return true
-end
-
-function epi_wide_to_long(data)
-    return data
-end

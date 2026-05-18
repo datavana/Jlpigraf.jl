@@ -301,16 +301,24 @@ function bind_rows_char(dataframes::Vector{DataFrame})::DataFrame
 end
 
 """
-    merge_vectors(values::Dict{String, Any}, default::Dict{String, Any})::Dict{String, Any}
+    merge_vectors(values, default)
 
 Merge values dictionary with default dictionary.
+Values from the values dictionary take precedence over defaults.
 
 # Arguments
 - `values`: Dictionary with values to merge.
 - `default`: Default dictionary to use as base.
+
+# Returns
+- Merged dictionary with values taking precedence over defaults.
 """
-function merge_vectors(values::Dict{String, Any}, default::Dict{String, Any})::Dict{String, Any}
-    error("merge_vectors is not defined; use merge(d1, d2) for dictionaries")
+function merge_vectors(values::Dict, default::Dict)::Dict
+    result = copy(default)
+    for (k, v) in values
+        result[k] = v
+    end
+    return result
 end
 
 """
