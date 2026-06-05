@@ -2,14 +2,16 @@
 
 The package is an API adapter for Epigraf. [Epigraf](https://github.com/digicademy/epigraf) is a proven tool for capturing, annotating, and publishing humanities corpora, which can be conceptualised as collections of articles. Epigraf provides a powerful API that can be used to query and modify project data. The [Rpigraf](https://github.com/datavana/rpigraf) package is available for conveniently querying project data via the API. Rpigraf's functions make it easier to filter and structure data. Jlpigraf translates Rpigraf into Julia. It provides data as DataFrames that can be used directly in other Julia packages for visualization or analysis.
 
+To get the most out of this toolset, it is helpful to familiarize yourself with the basics of Epigraf and its data model, the Relational Article Model (RAM). Please refer to the [documentation](https://digicademy.github.io/epigraf/devel/database/datamodel/) for more information.
+
 The package is still in the early stages. However, the basic functions are already useful, and additional features will be added to the package gradually.
 
 ### Roadmap
 
 | Version | Features | Status |
 | --- | --- | --- |
-| 0.1.0 | Basic API Interaction | 60 % |
-| 0.2.0 | Fetch tables and entities | 20 % |
+| 0.1.0 | Basic API Interaction | 80 % |
+| 0.2.0 | Fetch tables and entities | 40 % |
 | 0.3.0 | Distill data from complex structures | |
 | 0.4.0 | Import/Update data in Epigraf | |
 | 0.5.0 | Batch processing | |
@@ -138,11 +140,11 @@ description_list[2, :content]
 
 > "Star Wars 🌌 is a monumental franchise set in a galaxy far, far away. The series blends elements of fantasy and sci-fi, featuring epic battles between the dark and light sides of the Force. Iconic characters like Luke Skywalker, Darth Vader, and Yoda are central to its storytelling. The franchise has expanded over decades, influencing multiple generations with its themes of heroism, redemption, and the struggle against tyranny. Star Wars remains a cultural phenomenon with a massive fanbase around the world."
 
-### Access the RAL-Tree
+### Access the RAM-Tree
 
 The Relational Article Model is a nested structure. For example, an *article* contains *sections* with one or more *items*, that refer to a *property*.
 
-The following example shows how to extract genre information for the movies.
+The following example shows how to extract genre information for the movies with methods from Julia's DataFrame-Package.
 
 Firstly, identify the relevant *sections* and join them to *items* of the 'categories' type. 
 ``` julia
