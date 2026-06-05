@@ -405,3 +405,24 @@ For use in a pipe. Creates a function that filters a DataFrame by column compari
 - `col_cmp`: Column comparisons in the form `column => value`.
 """
 subset_by_col(col_cmp...) = df -> subset_by_col(df, col_cmp...)
+
+"""
+    split_pad(s::S, delim, n::T) where {S<:AbstractString, T<:Integer}
+
+Like Base.split but returns always an array of length(n)
+"""
+function split_pad(s::S, delim, n::T) where {S<:AbstractString, T<:Integer}
+    res_cand = split(s, delim)
+    res = vcat(res_cand, fill("", max(0, n - length(res_cand))))
+    return res[1:n]
+end
+
+"""
+    split_col!(df, col, delim, col_names)
+
+Split column `col` by creating the columns in `col_names`
+"""
+function split_col!(df, col, delim, col_names)
+    t_f(s) = Jlpigraf.split_pad(s, delim, length(col_names))
+    return transform!(df, col => ByRow(t_f) => col_names)
+end

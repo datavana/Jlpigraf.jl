@@ -139,7 +139,7 @@ Example: articles-123
 # Returns
 - `true` if valid, `false` otherwise
 """
-function epi_is_id(id; table = nothing)
+function epi_is_id(id, table = nothing)
     if id isa AbstractString && !isempty(id)
         table_pattern = table === nothing ? "(projects|articles|sections|items|properties|links|footnotes|types|users)" : string(table)
         fragment_pattern = "[0-9]+"
@@ -149,16 +149,6 @@ function epi_is_id(id; table = nothing)
         return occursin(pattern, id)
     end
     return false
-end
-
-"""
-    epi_is_id(id, table)
-
-Check whether the provided value contains valid IDs prefixed with table names.
-Positional arguments version for compatibility.
-"""
-function epi_is_id(id, table = nothing)
-    return epi_is_id(id; table = table)
 end
 
 """

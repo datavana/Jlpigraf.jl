@@ -5,6 +5,7 @@
 .#*
 run/*
 examples/scratch.jl
+examples/jlpigraf-local.env
 examples/scratch-data/*
 *.env
 

@@ -162,7 +162,7 @@ function fetch_entity(full_id::T; params = Dict{String, Any}(), db=nothing, sile
     id = id_parts[2]
 
     data = api_table(string(table, "/view/", id), params; db = db, maxpages = 1, silent = silent)
-    data = separate_wider_delim(data, :id, "-", ["table", "row"])
+    split_col!(data, :id, "-", ["table", "row"])
     return to_epitable(data)
 end
 
