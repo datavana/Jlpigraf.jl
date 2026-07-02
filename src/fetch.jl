@@ -119,7 +119,7 @@ The procedure corresponds to calling the view action in the Epigraf interface.
 
 Arguments:
 - ids: A character vector with IDs as returned by fetch_table, e.g. articles-1.
-         Alternatively, provide a dataframe containing the IDs in the id-column.
+         Alternatively, provide a dataframe or a dataframe row containing the IDs in the id-column.
          So you can chain fetch_articles() and fetch_entity()
 - params: A named list of query params
 - db: The database name. Leave empty when providing a dataframe produced by fetch_table().
@@ -150,8 +150,8 @@ function fetch_entity(ids::Vector{T}; params = Dict{String, Any}(), db=nothing, 
     
 end
 
-# extract ids from a data frame
-function fetch_entity(df_id::DataFrame; params = Dict{String, Any}(), db=nothing, silent=false)
+# extract ids from a data frame or a data frame row
+function fetch_entity(df_id::Union{DataFrame, DataFrameRow}; params = Dict{String, Any}(), db=nothing, silent=false)
     return fetch_entity(df_id.id; params, db=db, silent=silent)
 end
 
