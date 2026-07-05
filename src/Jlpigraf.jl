@@ -35,7 +35,7 @@ export epi_iri_parent, epi_extract_long, epi_extract_wide, epi_wide_to_long
 
 # parameters
 const SETTINGS_FILE = "jlpigraf.env"
-const VERSION = v"0.1.0-DEV"
+const VERSION = v"0.1.0"
 
 include("utils.jl")
 include("epi.jl")

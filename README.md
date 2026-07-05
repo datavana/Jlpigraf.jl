@@ -10,11 +10,11 @@ The package is still in the early stages. However, the basic functions are alrea
 
 | Version | Features | Status |
 | --- | --- | --- |
-| 0.1.0 | Basic API Interaction | 80 % |
-| 0.2.0 | Fetch tables and entities | 40 % |
-| 0.3.0 | Distill data from complex structures | |
-| 0.4.0 | Import/Update data in Epigraf | |
-| 0.5.0 | Batch processing | |
+| 0.1.0 | Basic API Interaction | 100 % |
+| 0.2.0 | Fetch tables and entities | 100 % |
+| 0.3.0 | Distill data from complex structures | 0% |
+| 0.4.0 | Import/Update data in Epigraf | 0% |
+| 0.5.0 | Batch processing | 0% |
 
 ## Installation
 Get the package from GitHub:
@@ -84,7 +84,7 @@ entity_list = fetch_entity(articles, db=db)
 
 `entity_list` holds metadata in columns such as 'id', 'type', 'articles_id' and 'sections_id', as well a content in columns like 'name', 'lemma' and 'content'.
 
-Epigraf uses the [Relational Article Model](https://epigraf.inschriften.net/help/coreconcepts/model) (RAL). 
+Epigraf uses the [Relational Article Model](https://epigraf.inschriften.net/help/coreconcepts/model) (RAM). 
 Its structure determines the layout of `entity_list`.
 
 For the following steps consider only three of the articles with the IDs: 'articles-5', 'articles-7', and 'articles-9'.
@@ -95,7 +95,7 @@ entity_list = fetch_entity(id_list; db=db)
 
 # Show only parts of the data frame
 cols = [:articles_id, :sections_id, :id, :type, :name, :content, :lemma]
-select(entity_list, cols)[1:10]
+select(entity_list, cols)[1:10] # for details see DataFrames.jl documentation
 ```
 
 ```
@@ -120,8 +120,8 @@ Examine the descriptions by selecting 'content' in rows of the 'text' type:
 ``` julia
 
 cols = [:articles_id, :sections_id, :type, :content];
-description_list = subset(e_list[:, cols], :sections_id => ByRow(!ismissing), :type => ByRow(isequal("text")));
-show(description_list, truncate=49)
+description_list = subset(e_list[:, cols], :sections_id => ByRow(!ismissing), :type => ByRow(isequal("text"))); # for details see DataFrames.jl documentation
+show(description_list, truncate=49) # for details see DataFrames.jl documentation
 ```
 
 ```
@@ -144,7 +144,7 @@ description_list[2, :content]
 
 The Relational Article Model is a nested structure. For example, an *article* contains *sections* with one or more *items*, that refer to a *property*.
 
-The following example shows how to extract genre information for the movies with methods from Julia's DataFrame-Package.
+The following example shows how to extract genre information for the movies with the methods `subset` and `innerjoin` from Julia's DataFrame-Package.
 
 Firstly, identify the relevant *sections* and join them to *items* of the 'categories' type. 
 ``` julia
@@ -204,6 +204,28 @@ genre_title_list = innerjoin(
    3 │ articles-9  Pirates of the Caribbean  Fantasy   properties-12
 
 ```
+
+### Extract details for a complete articles list
+
+The `fetch_entity` method can use the IDs of an article list retrieved using the `fetch_table` method. 
+
+```julia
+db = "epi_movies"
+articles = fetch_table("articles"; columns=[:id, :signature, :name], db=db, maxpages = 2)
+entity_list = fetch_entity(articles, db=db, silent=true)
+```
+
+This can also be achieved using pipe notation. In this case, we need a helper function to provide 'fetch_entity' with all the necessary arguments except the first one.
+```julia
+fetch_entity_pipe(articles) = fetch_entity(articles, db=db, silent=true)
+
+# Turn off warnings from the CSV package about empty columns
+using Logging 
+Logging.disable_logging(Logging.Warn)
+entity_list = fetch_table("articles"; columns=[:id, :signature, :name], db=db, maxpages = 2) |> fetch_entity_pipe
+
+```
+
 
 The package includes features that automate the merging of different types of content. This greatly simplifies the process of working with data stored in Epigraf.
 
