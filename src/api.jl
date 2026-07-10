@@ -81,7 +81,7 @@ function api_silent(silent = false)
 end
 
 """
-    api_buildurl(endpoint, query = nothing, database = nothing, extension = "json")
+    api_buildurl(endpoint, query = Dict{String, String}(), database = nothing, extension = "json")
 
 Build base URL
 
@@ -91,7 +91,7 @@ Build base URL
 - `database`: The database name
 - `extension`: Extension added to the URL path, defaults to json.
 """
-function api_buildurl(endpoint, query = nothing, database = nothing, extension = "json"; silent::Union{Nothing, Bool} = nothing)
+function api_buildurl(endpoint, query = Dict{String, String}(), database = nothing, extension = "json"; silent::Union{Nothing, Bool} = nothing)
 
     server = get(ENV, "EPI_APISERVER", "")
     token = get(ENV, "EPI_APITOKEN", "")
@@ -105,7 +105,7 @@ function api_buildurl(endpoint, query = nothing, database = nothing, extension =
     end
 
     # merge query params in endpoint
-    parsed_endpoint = URI(endpoint)    
+    parsed_endpoint = URI(endpoint)
     merge!(uri_query, query, URIs.queryparams(parsed_endpoint))
 
     # add extension
