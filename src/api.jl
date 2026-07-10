@@ -277,7 +277,7 @@ function api_job_execute(job_id)
 end
 
 """
-    api_table(endpoint, params = Dict(), db = nothing, maxpages = 1, silent = false)
+    api_table(db, endpoint, params = Dict(), maxpages = 1, silent = false)
 
 Download tables
 
@@ -290,7 +290,7 @@ Fetches tables such as articles, projects or properties
 - `maxpages`: Maximum number of pages to request. Set to 1 for non-paginated tables.
 - `silent`: Whether to output status messages
 """
-function api_table(endpoint, params = Dict(); db = nothing, maxpages = 1, silent = false)
+function api_table(db, endpoint, params = Dict(); maxpages = 1, silent = false)
 
     data = DataFrame()
     rows = DataFrame()

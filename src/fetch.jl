@@ -87,7 +87,7 @@ function db_fetch(table, params = Dict(), db = nothing)
 end
 
 """
-    fetch_table(table; columns = [], params = Dict(), db = nothing, maxpages = 1)
+    fetch_table(db, table; columns = [], params = Dict(), maxpages = 1)
 
 Fetch tables such as articles, projects or properties
 
@@ -101,16 +101,16 @@ Arguments:
 - db: The database name
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 """
-function fetch_table(table; columns = Union{String, Symbol}[], params = Dict(), db = nothing, maxpages = 1)
+function fetch_table(db, table; columns = Union{String, Symbol}[], params = Dict(), maxpages = 1)
     columns = unique(vcat(["id"], String.(columns)))
     columns_str = join(columns, ",")
     params["columns"] = columns_str
     params["idents"] = "id"
-    return api_table(table, params; db = db, maxpages = maxpages)
+    return api_table(db, table, params; maxpages = maxpages)
 end
 
 """
-    fetch_entity(ids, params = Dict(), db = nothing, silent = false)
+    fetch_entity(db, ids;params = Dict(), silent = false)
 
 Fetch entities such as single articles, projects or properties
 
@@ -118,22 +118,22 @@ Returns all data belonging to the entity identified by ID.
 The procedure corresponds to calling the view action in the Epigraf interface.
 
 Arguments:
+- db: The database name.
 - ids: A character vector with IDs as returned by fetch_table, e.g. articles-1.
          Alternatively, provide a dataframe or a dataframe row containing the IDs in the id-column.
          So you can chain fetch_articles() and fetch_entity()
 - params: A named list of query params
-- db: The database name. Leave empty when providing a dataframe produced by fetch_table().
-        In this case, the database name will be extracted from the dataframe.
+
 - silent: Whether to output a progress bar
 """
-function fetch_entity(ids::Vector{T}; params = Dict{String, Any}(), db=nothing, silent=false) where T<:AbstractString
+function fetch_entity(db, ids::Vector{T}; params = Dict{String, Any}(), silent=false) where T<:AbstractString
 
     if !isnothing(db)
         check_is_db(db)
     end
     
     if length(ids) == 0
-        data = to_epitable(DataFrame(), Dict("params" => params, "db" => db))
+        data = to_epitable(DataFrame(), Dict("params" => params))
         return data
     else 
         if !silent
@@ -142,7 +142,7 @@ function fetch_entity(ids::Vector{T}; params = Dict{String, Any}(), db=nothing, 
         data = DataFrame()
 
         for id in ids
-            data = vcat(data, fetch_entity(id; params=params, db=db, silent=silent); cols=:union)
+            data = vcat(data, fetch_entity(db, id; params=params, silent=silent); cols=:union)
         end
 
         return data
@@ -151,17 +151,17 @@ function fetch_entity(ids::Vector{T}; params = Dict{String, Any}(), db=nothing, 
 end
 
 # extract ids from a data frame or a data frame row
-function fetch_entity(df_id::Union{DataFrame, DataFrameRow}; params = Dict{String, Any}(), db=nothing, silent=false)
-    return fetch_entity(df_id.id; params, db=db, silent=silent)
+function fetch_entity(db, df_id::Union{DataFrame, DataFrameRow}; params = Dict{String, Any}(), silent=false)
+    return fetch_entity(db, df_id.id; params, silent=silent)
 end
 
-function fetch_entity(full_id::T; params = Dict{String, Any}(), db=nothing, silent=false) where T<:AbstractString
+function fetch_entity(db, full_id::T; params = Dict{String, Any}(), silent=false) where T<:AbstractString
     check_is_id(full_id)
     id_parts = split(full_id, "-")
     table = id_parts[1]
     id = id_parts[2]
 
-    data = api_table(string(table, "/view/", id), params; db = db, maxpages = 1, silent = silent)
+    data = api_table(db, string(table, "/view/", id), params; maxpages = 1, silent = silent)
     split_col!(data, :id, "-", ["table", "row"])
     return to_epitable(data)
 end
