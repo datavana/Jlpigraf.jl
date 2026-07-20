@@ -142,8 +142,7 @@ function distill_properties(df::DataFrame;
     props[!, :parent_id] = string.(props[!, :parent_id])
     
     # Select columns
-    keep_cols = unique(vcat([:lemma, :type, :norm_iri, :level, :lft, :rght, :id, :parent_id], 
-                           [Symbol(c) for c in cols]))
+    keep_cols = unique(vcat(["lemma", "type", "norm_iri", "level", "lft", "rght", "id", "parent_id"], cols))
     keep_cols = [c for c in keep_cols if c in names(props)]
     select!(props, keep_cols...)
     
@@ -517,7 +516,7 @@ Lemmata are concatenated using a slash - existing slashes are replaced by the en
 function tree_add_path(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, col_lemma::Symbol;
                      delim::String = "/")::DataFrame
     # Escape slashes (or other characters used as delimiter) in lemmata
-    # For "/", the HTML entity is "&x2f;"
+    # For "/", the HTML entity is "&x2f;"    
     delim_entity = delim == "/" ? "&x2f;" : "&amp;"
     data = transform!(data, col_lemma => ByRow(x -> replace(string(x), delim => delim_entity)) => col_lemma)
 
