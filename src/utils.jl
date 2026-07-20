@@ -69,7 +69,7 @@ end
 """
     drop_empty_columns!(df::DataFrame)::DataFrame
 
-Remove empty columns from a DataFrame.
+Remove empty columns from a DataFrame (mutating version).
 
 # Arguments
 - `df`: The DataFrame to process.
@@ -77,6 +77,18 @@ Remove empty columns from a DataFrame.
 function drop_empty_columns!(df)
     select!(df, [col for col in names(df) if any(!ismissing, df[!, col])])
     return df
+end
+
+"""
+    drop_empty_columns(df::DataFrame)::DataFrame
+
+Remove empty columns from a DataFrame (non-mutating version).
+
+# Arguments
+- `df`: The DataFrame to process.
+"""
+function drop_empty_columns(df::DataFrame)::DataFrame
+    return drop_empty_columns!(copy(df))
 end
 
 """
