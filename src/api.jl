@@ -13,14 +13,16 @@ Save API connection settings: use `apiserver` and `apitoken` or content of the s
 - `verbose`: Show debug messages and URLs
 """
 function api_setup(apiserver = nothing, apitoken = nothing; verbose::Union{Nothing, Bool} = nothing, settings_file = SETTINGS_FILE)
-    
+    settings_file_present = false
     if isfile(settings_file)        
         @info "Reading " settings_file        
-        DotEnv.load!(ENV, settings_file)
+        DotEnv.load!(ENV, settings_file; override=true)
+        settings_file_present = true
     else
         @info "No settings file found"     
     end    
 
+    # Ask user if keys are missing
     function store_user_response_in_env!(env_dict, key, arg, msg)
         if isnothing(arg)
             if (!haskey(env_dict, key))
@@ -45,7 +47,7 @@ function api_setup(apiserver = nothing, apitoken = nothing; verbose::Union{Nothi
     if (verbose) 
         @info "Using server" ENV["EPI_APISERVER"]        
     end
-    return nothing
+    return settings_file_present
     
 end
 
@@ -277,7 +279,7 @@ function api_job_execute(job_id)
 end
 
 """
-    api_table(db, endpoint, params = Dict(), maxpages = 1, silent = false)
+    api_table(db, endpoint, params = Dict{String, String}(), maxpages = 1, silent = false)
 
 Download tables
 
@@ -290,7 +292,7 @@ Fetches tables such as articles, projects or properties
 - `maxpages`: Maximum number of pages to request. Set to 1 for non-paginated tables.
 - `silent`: Whether to output status messages
 """
-function api_table(db, endpoint, params = Dict(); maxpages = 1, silent = false)
+function api_table(db, endpoint, params = Dict{String, String}(); maxpages = 1, silent = false)
 
     data = DataFrame()
     rows = DataFrame()

@@ -83,7 +83,7 @@ function distill_articles(df::DataFrame, cols::Vector{String} = String[];
         end
 
         # Join with cases
-        cases = fulljoin(cases, items, on = :id => :items_articles_id)
+        cases = outerjoin(cases, items, on = :id => :items_articles_id)
         
         # Reorder columns: cols first, then extract_cols, then id, type, norm_iri
         cases_cols = [Symbol(c) for c in names(cases)]
