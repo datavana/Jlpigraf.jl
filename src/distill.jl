@@ -156,12 +156,12 @@ function distill_properties(df::DataFrame;
     drop_empty_columns!(props)
 
     # Select final columns
-    final_cols = unique(vcat([:tree_path, :id, :parent_id], [Symbol(c) for c in cols], [:type, :norm_iri]))
+    final_cols = unique(vcat(["tree_path", "id", "parent_id"], cols, ["type", "norm_iri"]))
     final_cols = [c for c in final_cols if c in names(props)]
-    select!(props, final_cols...)
+    select!(props, final_cols...)    
     
     # Rename tree_path to path if it's first
-    if :tree_path in names(props) && names(props)[1] == :tree_path
+    if names(props)[1] == "tree_path"
         rename!(props, :tree_path => :path)
     end
 
