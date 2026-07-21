@@ -138,8 +138,7 @@ function distill_properties(df::DataFrame;
 
     # Add missing columns
     add_missing_columns!(props, ["parent_id", "articles_id"], "")
-    props[!, :id] = string.(props[!, :id])
-    props[!, :parent_id] = string.(props[!, :parent_id])
+    props[!, :id] = string.(props[!, :id])    
     
     # Select columns
     keep_cols = unique(vcat(["lemma", "type", "norm_iri", "level", "lft", "rght", "id", "parent_id"], cols))
@@ -518,38 +517,32 @@ function tree_add_path(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, c
     # Escape slashes (or other characters used as delimiter) in lemmata
     # For "/", the HTML entity is "&x2f;"    
     delim_entity = delim == "/" ? "&x2f;" : "&amp;"
-    data = transform!(data, col_lemma => ByRow(x -> replace(string(x), delim => delim_entity)) => col_lemma)
+    transform!(data, col_lemma => ByRow(x -> replace(string(x), delim => delim_entity)) => col_lemma)
 
-    # Initialize path
-    data = transform!(data, ByRow(_ -> missing) => :tree_path)
+    # Initialize path, use lemma for root nodes
+    lemma_maybe(parent_id, lemma) = ismissing(parent_id) ? string(lemma) : ""
+    transform!(data, [col_parent_id, col_lemma] => ByRow(lemma_maybe) => :tree_path)
 
-    # Root nodes (where parent_id is missing or empty)
-    current = filter(row -> ismissing(row[col_parent_id]) || row[col_parent_id] == "", data)
-    current = transform!(current, col_lemma => ByRow(x -> x) => :tree_path)
-    select!(current, [col_id, :tree_path])
-
-    while nrow(current) > 0
-        # Update path of current batch
-        data = leftjoin(data, current, on = col_id, makeunique=true)
-        new_path_col = Symbol("_tree_path_new_")
-        data = transform!(data, :tree_path => ByRow(x -> ismissing(x) ? missing : x) => new_path_col)
-        
-        # Update tree_path with new values
-        data[!, :tree_path] = ifelse.(ismissing.(data[!, new_path_col]), 
-                                       data[!, :tree_path], 
-                                       data[!, new_path_col])
-        select!(data, Not([new_path_col]))
-
-        # Get children of current batch and create path
-        current = innerjoin(current, data, on = col_id => col_parent_id, makeunique=true)
-        current = transform!(current, [:tree_path, col_lemma] => 
-                            ByRow((p, l) -> "$p $delim $l") => :tree_path)
-        select!(current, [col_id, :tree_path])
-        
-        # Remove duplicates
-        current = unique(current, [col_id, :tree_path])
+    for row in eachrow(data)
+        parent_id = row[col_parent_id]
+        path_elements = String[]
+        n = 0
+        nmax = 63 # max nesting level
+        while !ismissing(parent_id)
+            parent_index = findfirst(isequal(parent_id), data[:, col_id])
+            if !isnothing(parent_index)
+                push!(path_elements, data[parent_index, col_lemma])
+            end
+            parent_id = data[parent_index, col_parent_id]
+            n += 1
+            if n > nmax
+                break # avoid infinite loop
+            end
+        end
+        push!(path_elements, row[col_lemma])
+        row[:tree_path] = join(path_elements, " " * delim * " ")
     end
-
+    
     return data
 end
 

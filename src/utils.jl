@@ -104,7 +104,7 @@ Add columns if they are missing from the DataFrame.
 function add_missing_columns!(df::DataFrame, cols::Vector{String}, default::Any = missing)::DataFrame
     missing_cols = setdiff(cols, names(df))
     for col in missing_cols
-        df[!, col] .= default
+        df[!, col] .= Vector{Union{Missing, String}}(fill(default, nrow(df)))
     end
     return df
 end
