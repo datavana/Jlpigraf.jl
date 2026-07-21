@@ -31,24 +31,24 @@ function distill_articles(df::DataFrame, cols::Vector{String} = String[];
                          item_type::Union{Nothing, String} = nothing,
                          item_cols::Vector{String} = String[],
                          property_cols::Vector{String} = String[])
-    # Extract articles
-    cases = filter(:table => t -> t == "articles", df)
+    # Extract articles    
+    cases = subset(df, :table => ByRow(isequal("articles")))
     if !isempty(cols)
-        select!(cases, [:id, :type, :norm_iri, [Symbol(c) for c in cols]...])
+        select!(cases, ["id", "type", "norm_iri", cols...])
     else
-        select!(cases, [:id, :type, :norm_iri])
+        select!(cases, ["id", "type", "norm_iri"])
     end
     cases = unique(cases)
 
     extract_cols = String[]
     if !isempty(section_cols)
-        extract_cols = vcat(extract_cols, ["sections." * c for c in section_cols])
+        extract_cols = vcat(extract_cols, ["sections_" * c for c in section_cols])
     end
     if !isempty(item_cols)
-        extract_cols = vcat(extract_cols, ["items." * c for c in item_cols])
+        extract_cols = vcat(extract_cols, ["items_" * c for c in item_cols])
     end
     if !isempty(property_cols)
-        extract_cols = vcat(extract_cols, ["properties." * c for c in property_cols])
+        extract_cols = vcat(extract_cols, ["properties_" * c for c in property_cols])
     end
 
     if !isempty(extract_cols)
@@ -70,9 +70,13 @@ function distill_articles(df::DataFrame, cols::Vector{String} = String[];
             end
         end
 
-        # Select only needed columns
-        items_cols = vcat([:items_articles_id], [Symbol(c) for c in extract_cols])
-        select!(items, items_cols...)
+        # Select only needed columns        
+        missing_cols = setdiff(extract_cols, names(items))
+        if !isempty(missing_cols)
+            @warn "Columns not in data frame" missing_cols
+        end
+        items_cols = vcat(["items_articles_id"], intersect(names(items), extract_cols))
+        select!(items, items_cols)
 
         # Replace HTML entities
         for col in extract_cols
@@ -86,14 +90,12 @@ function distill_articles(df::DataFrame, cols::Vector{String} = String[];
         cases = outerjoin(cases, items, on = :id => :items_articles_id)
         
         # Reorder columns: cols first, then extract_cols, then id, type, norm_iri
-        cases_cols = [Symbol(c) for c in names(cases)]
-        final_cols = vcat(
-            [Symbol(c) for c in cols if Symbol(c) in cases_cols],
-            [Symbol(c) for c in extract_cols if Symbol(c) in cases_cols],
-            [:id, :type, :norm_iri]
-        )
-        final_cols = unique(final_cols)
-        final_cols = [c for c in final_cols if c in cases_cols]
+        cases_cols = names(cases)
+        @info cases_cols
+        final_cols = vcat(intersect(cols, cases_cols), intersect(extract_cols, cases_cols), ["id", "type", "norm_iri"])
+        unique!(final_cols)
+
+
         if !isempty(final_cols)
             select!(cases, final_cols...)
         end
