@@ -90,11 +90,9 @@ function distill_articles(df::DataFrame, cols::Vector{String} = String[];
         cases = outerjoin(cases, items, on = :id => :items_articles_id)
         
         # Reorder columns: cols first, then extract_cols, then id, type, norm_iri
-        cases_cols = names(cases)
-        @info cases_cols
+        cases_cols = names(cases)        
         final_cols = vcat(intersect(cols, cases_cols), intersect(extract_cols, cases_cols), ["id", "type", "norm_iri"])
         unique!(final_cols)
-
 
         if !isempty(final_cols)
             select!(cases, final_cols...)
