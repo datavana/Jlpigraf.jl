@@ -59,7 +59,7 @@ function distill_articles(df::DataFrame, cols::Vector{String} = String[];
             props = epi_extract_long(df, "properties")
             if nrow(props) > 0 && nrow(items) > 0
                 # Join items with properties
-                items = leftjoin(items, props, on = :items_property => :properties_id)
+                items = leftjoin(items, props, on = :items_property => :properties_id, matchmissing = :notequal)
             end
         end
 
@@ -149,7 +149,7 @@ function distill_properties(df::DataFrame;
     sort!(props, :lft)
     
     # Add tree path
-    props = tree_add_path(props, :id, :parent_id, :lemma)
+    props = tree_add_path!(props, :id, :parent_id, :lemma)
     
     # Drop empty columns
     drop_empty_columns!(props)
@@ -494,7 +494,7 @@ function extract_untagged(xml::AbstractString)::String
 end
 
 """
-    tree_add_path(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, col_lemma::Symbol;
+    tree_add_path!(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, col_lemma::Symbol;
                  delim::String = "/")::DataFrame
 
 Add a column holding the path of each node.
@@ -512,7 +512,7 @@ Lemmata are concatenated using a slash - existing slashes are replaced by the en
 # Returns
 - A DataFrame with the additional column tree_path.
 """
-function tree_add_path(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, col_lemma::Symbol;
+function tree_add_path!(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, col_lemma::Symbol;
                      delim::String = "/")::DataFrame
     # Escape slashes (or other characters used as delimiter) in lemmata
     # For "/", the HTML entity is "&x2f;"    
