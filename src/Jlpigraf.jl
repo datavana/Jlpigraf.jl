@@ -26,7 +26,7 @@ export api_setup, api_clear_setup, api_fetch
 export fetch_table, fetch_entity
 
 # Utils
-export subset_by_col, merge_vectors, default_values, drop_empty_columns, drop_empty_columns!
+export subset_by_col, merge_vectors, default_values, drop_empty_columns, drop_empty_columns!, join_names
 
 # Epigraf helpers
 export epi_create_iri, epi_clean_irifragment, epi_is_iripath, epi_is_id, epi_is_prefixid

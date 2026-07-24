@@ -532,8 +532,10 @@ function tree_add_path!(data::DataFrame, col_id::Symbol, col_parent_id::Symbol, 
             parent_index = findfirst(isequal(parent_id), data[:, col_id])
             if !isnothing(parent_index)
                 push!(path_elements, data[parent_index, col_lemma])
-            end
-            parent_id = data[parent_index, col_parent_id]
+                parent_id = data[parent_index, col_parent_id]
+            else
+                @warn "Parent ID not found" parent_id
+            end            
             n += 1
             if n > nmax
                 break # avoid infinite loop

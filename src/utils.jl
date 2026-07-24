@@ -438,3 +438,26 @@ function split_col!(df, col, delim, col_names)
     t_f(s) = Jlpigraf.split_pad(s, delim, length(col_names))
     return transform!(df, col => ByRow(t_f) => col_names)
 end
+
+"""
+    join_names(df; delim = " | ")
+
+Return names in a string
+"""
+join_names(df; delim = " | ") = join(names(df), delim)
+
+"""
+    move_row_to_end(col, value) 
+
+Move row with `value` in `col` to last position    
+"""
+function move_row_to_end!(df, col, value) 
+    row_index = findfirst(isequal(value), df[:, col])
+    if !isnothing(row_index)
+        push!(df, df[row_index, :])
+        deleteat!(df, row_index)
+    else
+        @warn "$(value) not found in $(col)"
+    end
+    row_index
+end
