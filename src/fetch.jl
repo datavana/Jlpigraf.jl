@@ -2,8 +2,8 @@
 # Functions for fetching data from Epigraf
 #
 
-"""
-    api_fetch(table, params = Dict(); db = nothing, maxpages = 1)
+"""    
+    api_fetch(db, table; params = Dict{String, String}() maxpages = 1, silent = false)
 
 Fetch entity data such as articles, projects or properties from the API
 
@@ -17,12 +17,12 @@ Arguments:
 - db: The database name
 - maxpages: Maximum number of pages to request. Set to 1 for non-paginated tables.
 """
-function api_fetch(table, params = Dict(); db = nothing, maxpages = 1)
+function api_fetch(db, table; params = Dict{String, String}(), maxpages = 1, silent = false)
     params["columns"] = "0"
     params["idents"] = "id"
-    df = api_table(table, params, db, maxpages)
+    df = api_table(db, table, params, maxpages=maxpages, silent=silent)
     df.table = [match(r"^[a-z]+", id).match for id in df.id]
-    df.database = db
+    df[!, :database] .= db
     df = unique(df)
     move_cols_to_front!(df, ["database", "table", "type", "id"])
     return df

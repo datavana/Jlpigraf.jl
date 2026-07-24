@@ -69,7 +69,7 @@ end
 """
     drop_empty_columns!(df::DataFrame)::DataFrame
 
-Remove empty columns from a DataFrame.
+Remove empty columns from a DataFrame (mutating version).
 
 # Arguments
 - `df`: The DataFrame to process.
@@ -77,6 +77,18 @@ Remove empty columns from a DataFrame.
 function drop_empty_columns!(df)
     select!(df, [col for col in names(df) if any(!ismissing, df[!, col])])
     return df
+end
+
+"""
+    drop_empty_columns(df::DataFrame)::DataFrame
+
+Remove empty columns from a DataFrame (non-mutating version).
+
+# Arguments
+- `df`: The DataFrame to process.
+"""
+function drop_empty_columns(df::DataFrame)::DataFrame
+    return drop_empty_columns!(copy(df))
 end
 
 """
@@ -92,7 +104,7 @@ Add columns if they are missing from the DataFrame.
 function add_missing_columns!(df::DataFrame, cols::Vector{String}, default::Any = missing)::DataFrame
     missing_cols = setdiff(cols, names(df))
     for col in missing_cols
-        df[!, col] .= default
+        df[!, col] .= Vector{Union{Missing, String}}(fill(default, nrow(df)))
     end
     return df
 end
@@ -425,4 +437,27 @@ Split column `col` by creating the columns in `col_names`
 function split_col!(df, col, delim, col_names)
     t_f(s) = Jlpigraf.split_pad(s, delim, length(col_names))
     return transform!(df, col => ByRow(t_f) => col_names)
+end
+
+"""
+    join_names(df; delim = " | ")
+
+Return names in a string
+"""
+join_names(df; delim = " | ") = join(names(df), delim)
+
+"""
+    move_row_to_end(col, value) 
+
+Move row with `value` in `col` to last position    
+"""
+function move_row_to_end!(df, col, value) 
+    row_index = findfirst(isequal(value), df[:, col])
+    if !isnothing(row_index)
+        push!(df, df[row_index, :])
+        deleteat!(df, row_index)
+    else
+        @warn "$(value) not found in $(col)"
+    end
+    row_index
 end

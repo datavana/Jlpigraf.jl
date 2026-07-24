@@ -26,12 +26,17 @@ export api_setup, api_clear_setup, api_fetch
 export fetch_table, fetch_entity
 
 # Utils
-export subset_by_col, merge_vectors, default_values
+export subset_by_col, merge_vectors, default_values, drop_empty_columns, drop_empty_columns!, join_names
 
 # Epigraf helpers
 export epi_create_iri, epi_clean_irifragment, epi_is_iripath, epi_is_id, epi_is_prefixid
 # Note: epi_is_irifragment is intentionally not exported as it's a helper for internal validation
 export epi_iri_parent, epi_extract_long, epi_extract_wide, epi_wide_to_long
+
+# Distill
+export distill_articles, distill_properties, distill_items, distill_links
+# Tree functions (needed by distill)
+export tree_add_path, tree_stack_ancestors, tree_add_ancestor, tree_add_level
 
 # parameters
 const SETTINGS_FILE = "jlpigraf.env"
@@ -45,6 +50,7 @@ include("batch.jl")
 include("fetch.jl")
 include("craft.jl")
 include("db.jl")
+include("distill.jl")
 
 
 

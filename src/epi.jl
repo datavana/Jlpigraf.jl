@@ -253,29 +253,29 @@ Get RAM rows by table name
 - A DataFrame with the filtered rows and columns prefixed with the table name
 """
 function epi_extract_long(df, table, type = nothing; prefix = true)
-    # Filter by table
-    df = filter(:table => t -> t == table, df)
+    # Filter by table    
+    df_type = subset(df, :table => ByRow(isequal(table)))
     
     # Filter by type if provided
     if type !== nothing
-        df = filter(:type => t -> t == type, df)
+        subset!(df_type, :type => ByRow(isequal(type)))        
     end
     
     # Drop empty columns
-    df = drop_empty_columns(df)
+    df_type = drop_empty_columns(df_type)
     
     # Get distinct rows
-    df = unique(df)
+    unique!(df_type)
     
     # Optionally remove ID columns
     # df = select(df, Not(["table", "type", "norm_iri", "row"]))
     
     # Prefix columns if requested
     if prefix
-        rename!(df, [Symbol(string(col)) => Symbol(string(table) * "." * col) for col in names(df)])
+        rename!(df_type, [col => table * "_" * col for col in names(df_type)])
     end
     
-    return df
+    return df_type
 end
 
 """
