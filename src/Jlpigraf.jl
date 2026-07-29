@@ -34,7 +34,7 @@ export epi_create_iri, epi_clean_irifragment, epi_is_iripath, epi_is_id, epi_is_
 export epi_iri_parent, epi_extract_long, epi_extract_wide, epi_wide_to_long
 
 # Distill
-export distill_articles, distill_properties, distill_items, distill_links
+export distill_articles, distill_properties, distill_items, distill_links, distill_types
 # Tree functions (needed by distill)
 export tree_add_path, tree_stack_ancestors, tree_add_ancestor, tree_add_level
 

@@ -423,6 +423,19 @@ function distill_links(df::DataFrame;
 end
 
 """
+    distill_types(df, table)
+
+Extract types for `table`, e.g. `items`, `properties`
+
+# Returns
+A DataFrame with types and their frequency
+"""
+function distill_types(df, table; col_id = :id)
+    gdf = groupby(subset(df, col_id => ByRow(startswith(table))), :type)
+    return combine(gdf, nrow)
+end
+
+"""
     extract_segment(xml::AbstractString, tagid::AbstractString)::String
 
 Function to extract segments based on ID attribute.
