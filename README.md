@@ -12,7 +12,7 @@ The package is still in the early stages. However, the basic functions are alrea
 | --- | --- | --- |
 | 0.1.0 | Basic API Interaction | 100 % |
 | 0.2.0 | Fetch tables and entities | 100 % |
-| 0.3.0 | Distill data from complex structures | 0% |
+| 0.3.0 | Distill data from complex structures | 80% |
 | 0.4.0 | Import/Update data in Epigraf | 0% |
 | 0.5.0 | Batch processing | 0% |
 
