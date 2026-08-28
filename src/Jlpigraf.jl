@@ -40,7 +40,7 @@ export tree_add_path, tree_stack_ancestors, tree_add_ancestor, tree_add_level
 
 # parameters
 const SETTINGS_FILE = "jlpigraf.env"
-const VERSION = v"0.1.0"
+const VERSION = v"0.2.8"
 
 include("utils.jl")
 include("epi.jl")

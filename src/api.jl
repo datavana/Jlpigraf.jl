@@ -338,7 +338,11 @@ function api_table(db, endpoint, params = Dict{String, String}(); maxpages = 1, 
         end
 
         if nrow(rows) > 0
-            data = vcat(data, rows)
+            if isempty(data)
+                data = similar(rows, 0)
+            end
+            cols = intersect(names(data), names(rows))
+            data = vcat(data[:, cols], rows[:, cols])
             fetchmore = (page < maxpages)
             page += 1
         else
