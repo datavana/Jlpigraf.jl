@@ -1,6 +1,6 @@
 name = "Jlpigraf"
 uuid = "09f48eac-2dd1-4590-853b-6772f250bf7c"
-version = "0.1.0-DEV"
+version = "0.2.8"
 authors = ["Georg Hertkorn <georg.hertkorn@adwmainz.de>, Jakob Jünger <jakob.juenger@uni-muenster.de> and contributors"]
 
 [deps]

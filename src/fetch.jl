@@ -21,10 +21,12 @@ function api_fetch(db, table; params = Dict{String, String}(), maxpages = 1, sil
     params["columns"] = "0"
     params["idents"] = "id"
     df = api_table(db, table, params, maxpages=maxpages, silent=silent)
-    df.table = [match(r"^[a-z]+", id).match for id in df.id]
-    df[!, :database] .= db
-    df = unique(df)
-    move_cols_to_front!(df, ["database", "table", "type", "id"])
+    if !isempty(df)
+        df.table = [match(r"^[a-z]+", id).match for id in df.id]
+        df[!, :database] .= db
+        df = unique(df)
+        move_cols_to_front!(df, ["database", "table", "type", "id"])
+    end
     return df
 end
 
