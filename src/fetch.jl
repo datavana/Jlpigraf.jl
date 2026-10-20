@@ -3,7 +3,7 @@
 #
 
 """    
-    api_fetch(db, table; params = Dict{String, String}() maxpages = 1, silent = false)
+    api_fetch(db, table; params = Dict{String, String}(), maxpages = 1, silent = false)
 
 Fetch entity data such as articles, projects or properties from the API
 
@@ -22,7 +22,7 @@ function api_fetch(db, table; params = Dict{String, String}(), maxpages = 1, sil
     params["idents"] = "id"
     df = api_table(db, table, params, maxpages=maxpages, silent=silent)
     if !isempty(df)
-        df.table = [match(r"^[a-z]+", id).match for id in df.id]
+        df[!, table] .= [match(r"^[a-z]+", id).match for id in df.id]
         df[!, :database] .= db
         df = unique(df)
         move_cols_to_front!(df, ["database", "table", "type", "id"])
@@ -31,7 +31,7 @@ function api_fetch(db, table; params = Dict{String, String}(), maxpages = 1, sil
 end
 
 """
-    db_fetch(table, params = Dict(), db = nothing)
+    db_fetch(table, params = Dict{String, Any}(), db = nothing)
 
 Fetch entity data such as articles, projects or properties using direct database access
 
@@ -42,45 +42,47 @@ Arguments:
 - params: A named list of query conditions
 - db: The database name
 """
-function db_fetch(table, params = Dict(), db = nothing)
-    df_root = db_table(table, params, db = db, compact = true)
+function db_fetch(table, params = Dict{String, Any}(), db = nothing)    
+    df_root = db_table(table, params, db = db, compact = true)    
     df = df_root
 
     if (table == "articles") && (nrow(df_root) > 0)
-        df_root.project = df_root.projects_id
-        df_root.projects_id = nothing
+        df_root[!, :project] .= df_root.projects_id
+        df_root[!, :projects_id] .= nothing
 
-        df.project = df.projects_id
-        df.projects_id = nothing
+        df[!, :project] .= df.projects_id
+        df[!, :projects_id] .= nothing
 
         df_sections = db_table("sections", Dict("articles_id" => df_root.id), db = db, compact = true)
-        df = vcat(df, df_sections)
+        df = vcat(df, df_sections; cols = :union)
 
         df_items = db_table("items", Dict("articles_id" => df_root.id), db = db, compact = true)
-        df_items.property = df_items.properties_id
-        df_items.properties_id = nothing
-        df = vcat(df, df_items)
+        df_items[!, :property] .= df_items.properties_id
+        df_items[!, :properties_id] .= nothing
+        df = vcat(df, df_items; cols = :union)
 
-        items_props = df_items[.!ismissing.(df_items.property), :property]
+        items_props = df_items[.!ismissing.(df_items.property), :property]        
         if length(items_props) > 0
             df_props = db_table("properties", Dict("id" => items_props), db = db, compact = true)
-            df = vcat(df, df_props)
+            df = vcat(df, df_props; cols = :union)
         end
 
         df_footnotes = db_table("footnotes", Dict("root_tab" => "articles", "root_id" => df_root.id), db = db, compact = true)
-        df = vcat(df, df_footnotes)
+        df = vcat(df, df_footnotes; cols = :union)
 
         df_links = db_table("links", Dict("root_tab" => "articles", "root_id" => df_root.id), db = db, compact = true)
-        df = vcat(df, df_links)
+        df = vcat(df, df_links; cols = :union)
 
-        links_props = filter(row -> row.to_tab == "properties" && !ismissing(row.to_id), df_links)
+        props_cond(a, b) = !ismissing(a) && !ismissing(b) && b == "properties"
+        # links_props = filter(row -> row.to_tab === "properties" && !ismissing(row.to_id), df_links)
+        links_props = subset(df_links, [:to_id, :to_tab] => ByRow(props_cond))
         if nrow(links_props) > 0
             df_props = db_table("properties", Dict("id" => links_props.to_id), db = db, compact = true)
-            df = vcat(df, df_props)
+            df = vcat(df, df_props; cols = :union)
         end
 
         df_projects = db_table("projects", Dict("id" => df_root.project), db = db, compact = true)
-        df = vcat(df, df_projects)
+        df = vcat(df, df_projects; cols = :union)
     end
 
     df = drop_empty_columns(df)

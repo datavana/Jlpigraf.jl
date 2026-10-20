@@ -5,7 +5,7 @@
 # Conditionally load database packages
 global MARIADB_AVAILABLE = true
 try
-    using MariaDB
+    using MySQL
 catch e
     global MARIADB_AVAILABLE = false
 end
@@ -63,15 +63,24 @@ function db_connect(db = nothing)
     end
     
     if isnothing(db)
-        db = get(ENV, "epi_dbname", "")
+        db = get(ENV, "epi_dbname", nothing)
+    end
+
+    if isnothing(db)
+        throw(ErrorException("Database is not specified"))
     end
 
     host = get(ENV, "epi_host", "localhost")
     port = parse(Int, get(ENV, "epi_port", "3306"))
     username = get(ENV, "epi_username", "root")
-    password = get(ENV, "epi_password", "root")
+    password = get(ENV, "epi_password", "root")    
 
-    return MariaDB.Connection(host, port, username, password, db)
+    con = DBInterface.connect(MySQL.Connection, host, username, password; db = db, port = port)
+    if isnothing(con) 
+        throw(ErrorException("Could not connect to $(db)"))
+    end
+
+    return con
 end
 
 """
@@ -163,14 +172,13 @@ function db_condition(table, field, value)
 end
 
 """
-    db_table(table; cond = Dict(), deleted = false, compact = false, db = nothing)
+    db_table(table; cond = Dict{String, Any}(), deleted = false, compact = false, db = nothing)
 
 Get data from a database table
 
 # Arguments
 - `table`: Table name
-- `cond`: Either a named dictionary of conditions, or a full condition as string, 
-          or a vector of condition strings, e.g. ["id = 10"]
+- `cond`: A dictionary of conditions
 - `deleted`: Deleted records are skipped by default. Set to true, to get all records.
 - `compact`: Whether to rename types columns to `type` and to add a `table` and a `database` column.
 - `db`: A connection object or the database name (string).
@@ -178,7 +186,8 @@ Get data from a database table
 # Returns
 - A DataFrame with the query results
 """
-function db_table(table; cond = Dict(), deleted = false, compact = false, db = nothing)
+function db_table(table, cond = Dict{String, Any}(); deleted = false, compact = false, db = nothing)
+    cond = Dict{String, Any}(cond)
     if !@isdefined(MARIADB_AVAILABLE) || MARIADB_AVAILABLE == false
         throw(ErrorException("MariaDB package is required for database operations. Please install it with: import Pkg; Pkg.add(\"MariaDB\")"))
     end
@@ -187,40 +196,27 @@ function db_table(table; cond = Dict(), deleted = false, compact = false, db = n
     end
     
     # Check if db is character --> open db connection
-    if db isa AbstractString
-        con = db_connect(db)
-        close_connection = true
-    else
+    if db isa DBInterface.Connection
         con = db
         close_connection = false
+    else
+        con = db_connect(db)
+        close_connection = true
     end
+
 
     # Construct SQL
     sql = "SELECT * FROM " * table
 
-    # Add deleted = 0 to the conditions vector
+    # Add deleted = 0 to the conditions vector    
     if !deleted
-        cond = vcat(["deleted = 0"], isa(cond, Dict) ? [cond] : cond)
+        cond["deleted"] = "0"        
     end
 
-    # Convert condition dict to vector of strings
-    if cond isa Dict
-        cond_vec = String[]
-        for (key, val) in cond
-            if !isnothing(key) && !isempty(string(key))
-                push!(cond_vec, db_condition(nothing, key, val isa Vector ? val : [val]))
-            else
-                push!(cond_vec, string(val))
-            end
-        end
-        cond = cond_vec
-    elseif cond isa AbstractString
-        cond = [cond]
-    end
-
+    
     # Add all conditions to the query
     if !isempty(cond)
-        cond = ["(" * c * ")" for c in cond]
+        cond = [sql_cond(p.first, p.second) for p in cond]
         cond_str = join(cond, " AND ")
         sql = sql * " WHERE " * cond_str
     end
@@ -236,7 +232,7 @@ function db_table(table; cond = Dict(), deleted = false, compact = false, db = n
     end
 
     if close_connection
-        DBInterface.disconnect(con)
+        DBInterface.close(con)
     end
 
     if compact
@@ -252,3 +248,21 @@ function db_table(table; cond = Dict(), deleted = false, compact = false, db = n
 
     return df
 end
+
+
+"""
+    sql_cond(field::S1, value::S2; op="=") where {S1<:AbstractString, S2<:AbstractString}
+    sql_cond(field::S, value::T) where {S<:AbstractString, T<:Vector{Any}}
+
+Return a string that can be part of an SQL-condition
+"""
+function sql_cond(field::S, value::T; op=" = ") where {S<:AbstractString, T<:Any}
+    return "(" * field * op * sql_decorate(value) * ")"
+end
+
+function sql_cond(field::S, value_list::T) where {S<:AbstractString, T<:Vector{<:Any}}    
+    return "(" * field * " in (" * join(sql_decorate.(value_list), ", ") * "))"
+end
+
+sql_decorate(v::Any) = "'" * string(v) * "'"
+sql_decorate(v::Integer) = string(v)
